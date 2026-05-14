@@ -1,19 +1,3 @@
----
-title: "Demo Diagrams"
-format: html
-include-after-body:
-  - text: |
-      <script>
-      mermaid.registerIconPacks([
-        {
-          name: 'logos',
-          loader: () =>
-            fetch('https://unpkg.com/@iconify-json/logos@1/icons.json').then((res) => res.json()),
-        },
-      ]);
-      </script>
----
-
 # Cloud Note
 
 Cloud Note is a production-ready sample web application designed to demonstrate how to build a simple microservices architecture on AWS. It includes infrastructure as code for the main application, an observability stack, and a CI/CD pipeline.
@@ -43,6 +27,21 @@ This microservice architecture is designed for a simple web application. It may 
 
 ### Main application
 
+---
+title: "Demo Diagrams"
+format: html
+include-after-body:
+  - text: |
+      <script>
+      mermaid.registerIconPacks([
+        {
+          name: 'logos',
+          loader: () =>
+            fetch('https://unpkg.com/@iconify-json/logos@1/icons.json').then((res) => res.json()),
+        },
+      ]);
+      </script>
+---
 ```mermaid
 architecture-beta
 
