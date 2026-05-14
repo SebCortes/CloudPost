@@ -27,21 +27,6 @@ This microservice architecture is designed for a simple web application. It may 
 
 ### Main application
 
----
-title: "Demo Diagrams"
-format: html
-include-after-body:
-  - text: |
-      <script>
-      mermaid.registerIconPacks([
-        {
-          name: 'logos',
-          loader: () =>
-            fetch('https://unpkg.com/@iconify-json/logos@1/icons.json').then((res) => res.json()),
-        },
-      ]);
-      </script>
----
 ```mermaid
 architecture-beta
 
@@ -166,6 +151,14 @@ As this is a simple sample application, some features have not been implemented.
 - **Proper code pipeline**: The current CI/CD pipeline is very basic and should be improved for production use, with proper testing stages, staging environment, and manual approval before production deployment
 - **Backup and Disaster Recovery**: Implement backup strategies, and a disaster recovery plan to ensure business continuity in case of failures.
 
-## Setup
+## Deployment
 
-TODO
+### Local deployment
+
+The application can be deployed locally using Docker Compose. This is useful for development and testing purposes, but not recommended for production use.
+
+```bash
+./local-setup.sh
+```
+
+### AWS setup
