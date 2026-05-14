@@ -32,44 +32,37 @@ architecture-beta
 
 service user(fa:user)[User]
 
-service internet(gcp:cloud-generic)[Internet]
-
 group aws(aws:aws-cloud-logo)[AWS Cloud]
 
-service route53(aws:arch-amazon-route-53)[Route53] in aws
-
+service dns(server)[DNS] in aws
+service route53(aws:arch-amazon-route-53)[AWS Route53] in aws
 group fr(cloud)["eu-west-3"] in aws
 
 group vpc(aws:arch-amazon-virtual-private-cloud)["VPC"] in fr
 
 service alb(aws:res-elastic-load-balancing-application-load-balancer)["Application Load Balancer (ALB)"] in vpc
-
 service ecsfront(aws:arch-amazon-elastic-container-service)["ECS Fargate frontend"] in vpc
-
 service ecsback(aws:arch-amazon-elastic-container-service)["ECS Fargate backend"] in vpc
-
-service ecr(aws:arch-amazon-elastic-container-registry)["ECR"] in aws
-
 service rds(aws:arch-amazon-rds)[RDS PostgreSQL] in vpc
 
+service ecr(aws:arch-amazon-elastic-container-registry)["ECR"] in aws
 service secretsmanager(aws:arch-aws-secrets-manager)[AWS Secrets Manager] in aws
 
-user:R --> L:internet
-internet:R --> L:route53
-route53:R --> L:alb
+user:R -[Request]-> L:dns
+route53:B --> T:dns
+dns:R --> L:alb
 
 alb:T --> B:ecsfront
 
 alb:B --> T:ecsback
 
-
-ecsfront:R <-- L:ecr
-ecsback:R <-- L:ecr
+ecsfront:R <-[Pull latest image]- T:ecr
+ecsback:R <-[Pull latest image]- L:ecr
 
 ecsback:B --> T:rds
 
-ecsback:L <--> R:secretsmanager
-rds:L <--> R:secretsmanager
+ecsback:L <-[Manage secrets]-> T:secretsmanager
+rds:L <-[Rotate secrets]-> R:secretsmanager
 ```
 
 
@@ -105,7 +98,7 @@ service metrics(server)[Metrics] in aws
 user:R --> L:vpn
 vpn:R --> L:grafana
 
-grafana:R <-- L:prometheus
+grafana:T <-- L:prometheus
 grafana:R <-- L:loki
 
 prometheus:R <-- L:metrics
@@ -133,10 +126,10 @@ service ecr(aws:arch-amazon-elastic-container-registry)[AWS ECR] in aws
 
 service ecs(aws:arch-amazon-elastic-container-service)[AWS ECS] in aws
 
-developer:R --> L:code
-code:R --> L:actions
-actions:R --> L:ecr
-ecr:R --> L:ecs
+developer:R -[Push code]-> L:code
+code:R -[Trigger build]-> L:actions
+actions:R -[Send image]-> L:ecr
+ecr:R -[Image pull]-> L:ecs
 ```
 
 ## Possible improvements
