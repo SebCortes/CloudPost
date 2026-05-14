@@ -19,9 +19,9 @@ Cloud Note is a production-ready sample web application designed to demonstrate 
 - **database**: [PostgreSQL](https://github.com/postgres/postgres)
 - **infrastructure**: [Terraform](https://github.com/hashicorp/terraform)
 - **observability**: [Grafana](https://github.com/grafana/grafana), [Prometheus](https://github.com/prometheus/prometheus), [Loki](https://github.com/grafana/loki)
-- **CI/CD**: [GitHub Actions](https://github.com/features/actions), [AWS CodeBuild](https://aws.amazon.com/fr/codebuild/), [AWS CodeDeploy](https://aws.amazon.com/fr/codedeploy/)
+- **CI/CD**: [GitHub Actions](https://github.com/features/actions) and [AWS ECR](https://aws.amazon.com/fr/ecr/)
 
-## Architecture
+## AWS Architecture example
 
 This microservice architecture is designed for a simple web application. It may be improved by adding more sophisticated features (see [Possible improvements](#possible-improvements) section) and by refering to the AWS documentation (see [AWS Reference Architecture Diagrams](https://aws.amazon.com/fr/architecture/reference-architecture-diagrams/)).
 
@@ -74,8 +74,6 @@ rds:L <--> R:secretsmanager
 
 
 ### Monitoring and Observability
-> [!NOTE]
-> This has not been implemented, this is for reference only
 
 Self-hosted observability stack deployed on AWS, with Grafana for visualization, Prometheus for metrics collection, and Loki for log aggregation. The observability stack is deployed in a private network, with access restricted to developers through a secure VPN connection.
 - A managed PostgreSQL database using Amazon RDS could be used to store the required data and AWS Secrets Manager to manage the credentials for the database.
@@ -116,7 +114,7 @@ loki:R <-- L:logs
 
 ### CI / CD
 
-This is a simple CI/CD pipeline using GitHub Actions to build and push Docker images to AWS ECR, and then deploy the application to AWS Fargate. The pipeline is triggered on every push to the main branch, and includes stages for building the Docker image, testing it, pushing it to ECR which then triggers a deployment to Fargate using AWS CodeDeploy.
+This is a simple CI/CD pipeline using GitHub Actions to build and push Docker images to AWS ECR, which are then used by ECS Fargate to pull the latest images and deploy the application. The pipeline is triggered on every push to the main branch, and includes stages for building, testing, and deploying the application.
 
 ```mermaid
 architecture-beta
