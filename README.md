@@ -1,0 +1,165 @@
+# Cloud Note
+
+Cloud Note is a production-ready sample web application designed to demonstrate how to build a simple microservices architecture on AWS. It includes infrastructure as code for the main application, an observability stack, and a CI/CD pipeline.
+
+## Summary
+
+- [Technologies used](#technologies-used)
+- [Architecture](#architecture)
+- [Main application](#main-application)
+- [Monitoring and Observability](#monitoring-and-observability)
+- [CI/CD](#ci/cd)
+- [Possible improvements](#possible-improvements)
+- [Setup](#setup)
+
+## Technologies used
+
+- **frontend**: [Next.js](https://github.com/vercel/next.js/)
+- **backend**: [Nest.js](https://github.com/nestjs/nest)
+- **database**: [PostgreSQL](https://github.com/postgres/postgres)
+- **infrastructure**: [Terraform](https://github.com/hashicorp/terraform)
+- **observability**: [Grafana](https://github.com/grafana/grafana), [Prometheus](https://github.com/prometheus/prometheus), [Loki](https://github.com/grafana/loki)
+- **CI/CD**: [GitHub Actions](https://github.com/features/actions), [AWS CodeBuild](https://aws.amazon.com/fr/codebuild/), [AWS CodeDeploy](https://aws.amazon.com/fr/codedeploy/)
+
+## Architecture
+
+This microservice architecture is designed for a simple web application. It may be improved by adding more sophisticated features (see [Possible improvements](#possible-improvements) section) and by refering to the AWS documentation (see [AWS Reference Architecture Diagrams](https://aws.amazon.com/fr/architecture/reference-architecture-diagrams/)).
+
+### Main application
+
+```mermaid
+architecture-beta
+
+service user(fa:user)[User]
+
+service internet(gcp:cloud-generic)[Internet]
+
+group aws(aws:aws-cloud-logo)[AWS Cloud]
+
+service route53(aws:arch-amazon-route-53)[Route53] in aws
+
+group fr(cloud)["eu-west-3"] in aws
+
+group vpc(aws:arch-amazon-virtual-private-cloud)["VPC"] in fr
+
+service alb(aws:res-elastic-load-balancing-application-load-balancer)["Application Load Balancer (ALB)"] in vpc
+
+service ecsfront(aws:arch-amazon-elastic-container-service)["ECS Fargate frontend"] in vpc
+
+service ecsback(aws:arch-amazon-elastic-container-service)["ECS Fargate backend"] in vpc
+
+service ecr(aws:arch-amazon-elastic-container-registry)["ECR"] in aws
+
+service rds(aws:arch-amazon-rds)[RDS PostgreSQL] in vpc
+
+service secretsmanager(aws:arch-aws-secrets-manager)[AWS Secrets Manager] in aws
+
+user:R --> L:internet
+internet:R --> L:route53
+route53:R --> L:alb
+
+alb:T --> B:ecsfront
+
+alb:B --> T:ecsback
+
+
+ecsfront:R <-- L:ecr
+ecsback:R <-- L:ecr
+
+ecsback:B --> T:rds
+
+ecsback:L <--> R:secretsmanager
+rds:L <--> R:secretsmanager
+```
+
+
+### Monitoring and Observability
+> [!NOTE]
+> This has not been implemented, this is for reference only
+
+Self-hosted observability stack deployed on AWS, with Grafana for visualization, Prometheus for metrics collection, and Loki for log aggregation. The observability stack is deployed in a private network, with access restricted to developers through a secure VPN connection.
+- A managed PostgreSQL database using Amazon RDS could be used to store the required data and AWS Secrets Manager to manage the credentials for the database.
+- Kafka could also be used to handle high volumes of logs and metrics, but for simplicity, I would use Prometheus and Loki directly to scrape and collect data from the application.
+
+```mermaid
+architecture-beta
+
+service user(fa:user)[User]
+
+group aws(aws:aws-cloud-logo)[AWS Cloud]
+
+group fr(cloud)["eu-west-3"] in aws
+
+group vpc(aws:arch-amazon-virtual-private-cloud)["VPC"] in fr
+
+group privatecloud(cloud)["Private network"] in vpc
+service vpn(aws:arch-aws-client-vpn)["AWS VPN"] in aws
+service grafana(aws:arch-amazon-ec2)["Grafana (EC2)"] in privatecloud
+
+group observability(cloud)["Observability network"] in vpc
+service prometheus(aws:spot-fleet)["Prometheus (Spot instance)"] in observability
+service loki(aws:spot-fleet)["Loki (Spot instance)"] in observability
+
+
+service logs(server)[Logs] in aws
+service metrics(server)[Metrics] in aws
+
+user:R --> L:vpn
+vpn:R --> L:grafana
+
+grafana:R <-- L:prometheus
+grafana:R <-- L:loki
+
+prometheus:R <-- L:metrics
+loki:R <-- L:logs
+```
+
+### CI / CD
+
+This is a simple CI/CD pipeline using GitHub Actions to build and push Docker images to AWS ECR, and then deploy the application to AWS Fargate. The pipeline is triggered on every push to the main branch, and includes stages for building the Docker image, testing it, pushing it to ECR which then triggers a deployment to Fargate using AWS CodeDeploy.
+
+```mermaid
+architecture-beta
+
+service developer(fa:user)[Developer]
+
+group github(logos:github-icon)[GitHub]
+
+service actions(logos:github-actions)[GitHub Actions] in github
+
+service code(fa:file-code)[Code Repository] in github
+
+group aws(aws:aws-cloud-logo)[AWS Cloud]
+
+service ecr(aws:arch-amazon-elastic-container-registry)[AWS ECR] in aws
+
+service ecs(aws:arch-amazon-elastic-container-service)[AWS ECS] in aws
+
+developer:R --> L:code
+code:R --> L:actions
+actions:R --> L:ecr
+ecr:R --> L:ecs
+```
+
+## Possible improvements
+
+As this is a simple sample application, some features have not been implemented. Here are some of the features that could be added to make this architecture more scalable and production-ready:
+
+- **CloudFront & WAF**: Can be added to protect against common web exploits
+- **API Gateway**: Can be added as a first entry point for better redirection, caching and security features. It can also be coupled with a S3 bucket to serve static assets
+- **AWS CodeDeploy and CodeBuild**: For a more robust CI/CD pipeline at scale (green/blue, custom deployments stages), AWS CodeDeploy and CodeBuild can be used
+- **Mailing**: Use a third-party service like Brevo, SendGrid or AWS SES
+- **Multi-region Deployment**
+- **AWS KMS** for RDS data encryption
+- **CDN**: Can be added to serve static assets and improve performance for users around the world
+- **SSL/TLS**: Can be added using AWS Certificate Manager, to be used over the internet and between services
+- **Event queue**: For highly scalable applications, an event queue like Kafka can be added
+- **Data Pipeline**: A data pipeline for analytics may be added to gather insights (see [medallion architecture](https://www.databricks.com/blog/what-is-medallion-architecture)).
+- **Orchestration**: For complex applications, an orchestration tool can be added to manage workflows with dependencies between services
+- **Kubernetes**: For better scalability and management of containerized applications, Kubernetes can be used instead of EC2 instances
+- **Proper code pipeline**: The current CI/CD pipeline is very basic and should be improved for production use, with proper testing stages, staging environment, and manual approval before production deployment
+- **Backup and Disaster Recovery**: Implement backup strategies, and a disaster recovery plan to ensure business continuity in case of failures.
+
+## Setup
+
+TODO
