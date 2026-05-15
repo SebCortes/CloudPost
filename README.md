@@ -167,24 +167,33 @@ TODO
 
 ## Local development
 
+Install dependencies
+```bash
+cd cloud-post-api && npm ci && cd ../cloud-post-front && npm ci && cd ..
+```
+
 Build images
 ```bash
 docker compose build
 ```
+
 Run database
 ```bash
 docker compose up -d cloud-post-db
 ```
+
 Apply database migrations (env should contain the database url var)
 ```bash
 cd cloud-post-api
 npx env-cmd -f ../.env npx prisma migrate dev
 ```
+
 Start backend
 ```bash
 cd cloud-post-api
 npm run start:dev
 ```
+
 Start frontend
 ```bash
 cd cloud-post-front
