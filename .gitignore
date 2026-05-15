@@ -1,0 +1,93 @@
+# compiled output
+/cloud-post-api/dist
+/cloud-post-api/node_modules
+/cloud-post-api/build
+/cloud-post-api/src/generated
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# dotenv environment variable files
+.env*
+
+# temp directory
+.temp
+.tmp
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/cloud-note-front/node_modules
+/cloud-note-front/.pnp
+/cloud-note-front/.pnp.*
+/cloud-note-front/.yarn/*
+/cloud-note-front/!.yarn/patches
+/cloud-note-front/!.yarn/plugins
+/cloud-note-front/!.yarn/releases
+/cloud-note-front/!.yarn/versions
+
+# testing
+/cloud-note-front/coverage
+
+# next.js
+/cloud-note-front/.next/
+/cloud-note-front/out/
+
+# production
+/cloud-note-front/build
+
+# misc
+/cloud-note-front/.DS_Store
+/cloud-note-front/*.pem
+
+# debug
+/cloud-note-front/npm-debug.log*
+/cloud-note-front/yarn-debug.log*
+/cloud-note-front/yarn-error.log*
+/cloud-note-front/.pnpm-debug.log*
+
+# vercel
+/cloud-note-front/.vercel
+
+# typescript
+/cloud-note-front/*.tsbuildinfo
+/cloud-note-front/next-env.d.ts
+/cloud-post-front/node_modules

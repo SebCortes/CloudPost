@@ -1,0 +1,37 @@
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { RobotsTxtController } from './robots.txt/robots.txt.controller';
+import { ConfigModule } from '@nestjs/config';
+import { validate } from './env.validation';
+import { PostModule } from './post/post.module';
+import { PrismaModule } from './prisma/prisma.module';
+
+@Module({
+  imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
+    ConfigModule.forRoot({
+      validate,
+      isGlobal: true,
+    }),
+    PostModule,
+    PrismaModule,
+  ],
+  controllers: [
+    AppController,
+    RobotsTxtController,
+  ],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    },
+  ],
+})
+export class AppModule {}
