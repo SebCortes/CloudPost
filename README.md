@@ -162,3 +162,30 @@ The application can be deployed locally using Docker Compose. This is useful for
 ```
 
 ### AWS setup
+
+TODO
+
+## Local development
+
+Build images
+```bash
+docker compose build
+```
+Run database
+```bash
+docker compose up -d cloud-post-db
+```
+Apply database migrations (env should contain the database url var)
+```bash
+cd cloud-post-api
+npx env-cmd -f ../.env npx prisma migrate dev
+```
+Start backend
+```bash
+cd cloud-post-api
+npm run start:dev
+```
+```bash
+cd cloud-post-front
+npm run dev
+```
