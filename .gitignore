@@ -91,3 +91,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /cloud-note-front/*.tsbuildinfo
 /cloud-note-front/next-env.d.ts
 /cloud-post-front/node_modules
+/cloud-post-front/.next
+cloud-post-front/next-env.d.ts
