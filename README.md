@@ -185,6 +185,7 @@ Start backend
 cd cloud-post-api
 npm run start:dev
 ```
+Start frontend
 ```bash
 cd cloud-post-front
 npm run dev
