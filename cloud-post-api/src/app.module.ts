@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -8,6 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { validate } from './env.validation';
 import { PostModule } from './post/post.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ThrottlerBehindProxyGuard } from './throttler-behind-proxy/throttler-behind-proxy.guard';
+import { LoggerMiddleware } from './logger/logger.middleware';
 
 @Module({
   imports: [
@@ -30,8 +32,17 @@ import { PrismaModule } from './prisma/prisma.module';
     AppService,
     {
       provide: APP_GUARD,
+      useClass: ThrottlerBehindProxyGuard
+    },
+    {
+      provide: APP_GUARD,
       useClass: ThrottlerGuard
     },
   ],
 })
-export class AppModule {}
+
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}
