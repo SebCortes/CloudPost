@@ -34,7 +34,7 @@ class EnvironmentVariables {
   @IsInt()
   @Min(0)
   @Max(65535)
-  PORT: number = 3000
+  API_PORT: number = 3000
 
   @IsString()
   @IsNotEmpty()

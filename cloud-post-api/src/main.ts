@@ -14,7 +14,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService) as ConfigService<EnvVariables, true>
   
-  const port = configService.get<EnvVariables['PORT']>('PORT')
+  const port = configService.get<EnvVariables['API_PORT']>('API_PORT')
 
   await app.listen(port)
   
