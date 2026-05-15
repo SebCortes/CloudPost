@@ -30,6 +30,16 @@ export class PostService {
     })
   }
 
+  async countPosts(params: {
+    where?: Prisma.PostWhereInput
+  }) {
+    const { where } = params
+
+    return this.prisma.post.count({
+      where,
+    })
+  }
+
   async post(params: {
     where: Prisma.PostWhereUniqueInput
     select?: Prisma.PostSelect
