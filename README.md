@@ -12,6 +12,17 @@ Cloud Post is a production-ready sample web application designed to demonstrate 
 - [Possible improvements](#possible-improvements)
 - [Setup](#setup)
 
+## TODO
+
+This project is still a work in progress, and some features are not yet implemented.
+- [x] Local development setup with Docker Compose
+- [x] Nest JS Setup
+- [ ] Next JS Setup
+- [ ] Terraform code for AWS infrastructure setup
+- [ ] Add documentation to Nest JS
+- [ ] CI/CD pipeline with GitHub Actions and AWS ECR
+- [ ] Observability stack with Grafana, Prometheus and Loki
+
 ## Technologies used
 
 - **frontend**: [Next.js](https://github.com/vercel/next.js/)
