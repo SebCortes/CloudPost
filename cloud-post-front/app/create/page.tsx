@@ -1,5 +1,5 @@
-import { CreatePostForm } from "../components/CreatePostForm";
-import { SiteHeader } from "../components/SiteHeader";
+import { CreatePostForm } from "../components/CreatePostForm"
+import { SiteHeader } from "../components/SiteHeader"
 
 export default function CreatePostPage() {
   return (
@@ -7,5 +7,5 @@ export default function CreatePostPage() {
       <SiteHeader active="create" />
       <CreatePostForm />
     </>
-  );
+  )
 }

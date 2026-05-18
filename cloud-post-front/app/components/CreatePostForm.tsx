@@ -1,50 +1,87 @@
-"use client";
+"use client"
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
-import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
-import SendIcon from "@mui/icons-material/Send";
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { PostCard } from "./PostCard";
-import { categories, type Post, type PostCategory } from "../lib/posts";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined"
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline"
+import SendIcon from "@mui/icons-material/Send"
+import Link from "next/link"
+import { useMemo, useState } from "react"
+import { PostCard } from "./PostCard"
+import {
+  buildDraftPost,
+  createPost,
+  postCategories,
+  type Post,
+  type PostCategory,
+} from "../lib/posts"
+import { useRouter } from "next/navigation"
 
-const selectableCategories = categories.filter(
-  (category): category is PostCategory => category !== "All",
-);
+const selectableCategories = postCategories
 
 export function CreatePostForm() {
-  const [title, setTitle] = useState("What I wish more people wrote about");
-  const [author, setAuthor] = useState("");
-  const [category, setCategory] = useState<PostCategory>("Idea");
+  const [title, setTitle] = useState("What I wish more people wrote about")
+  const [author, setAuthor] = useState("")
+  const [category, setCategory] = useState<PostCategory>("Idea")
   const [body, setBody] = useState(
     "A post that states one idea clearly without trying to solve everything. The discussion can do the rest.",
-  );
-  const [isPublished, setIsPublished] = useState(false);
+  )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
+
+  const router = useRouter()
 
   const previewPost = useMemo<Post>(
-    () => ({
-      id: 999,
-      title: title.trim() || "Your post title",
-      excerpt:
-        body.trim().slice(0, 132) ||
-        "The first lines of your post will appear here.",
-      body: body.trim() || "Your content will appear in the preview.",
-      author: author.trim() || "Anonymous",
+    () => buildDraftPost({
+      title,
+      body,
+      author,
       category,
-      readTime: `${Math.max(1, Math.ceil(body.split(/\s+/).length / 180))} min`,
-      publishedAt: "Just now",
-      reactions: 0,
-      comments: [],
-      accent: "violet",
     }),
     [author, body, category, title],
-  );
+  )
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsPublished(true);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const trimmedTitle = title.trim()
+    const trimmedBody = body.trim()
+    const trimmedAuthor = author.trim()
+
+    if (!trimmedTitle || !trimmedBody) {
+      setFeedback({
+        type: "error",
+        message: "Title and content are required before publishing.",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    setFeedback(null)
+
+    try {
+      const postId = await createPost({
+        title: trimmedTitle,
+        content: trimmedBody,
+        authorName: trimmedAuthor || "Anonymous",
+        category,
+      })
+
+      setFeedback({
+        type: "success",
+        message: "Post published through the API. It will appear in the feed on the next refresh or infinite-scroll fetch.",
+      })
+
+      router.push(`/posts/${postId}`)
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "The API rejected the post. Check the required title, content, and author rules.",
+      })
+    } finally {
+      setIsSubmitting(false)
+      window.scrollTo(0, 0)
+    }
   }
 
   return (
@@ -68,11 +105,11 @@ export function CreatePostForm() {
         </p>
       </section>
 
-      {isPublished ? (
+      {feedback ? (
         <div className="flex items-start gap-3 border-2 border-black bg-[var(--sun)] p-4 shadow-[4px_4px_0_#101010]">
           <CheckCircleOutlineIcon />
           <p className="font-bold">
-            Post simulated as published. It still stays inside the browser.
+            {feedback.message}
           </p>
         </div>
       ) : null}
@@ -91,8 +128,8 @@ export function CreatePostForm() {
               id="title"
               maxLength={96}
               onChange={(event) => {
-                setIsPublished(false);
-                setTitle(event.target.value);
+                  setFeedback(null)
+                setTitle(event.target.value)
               }}
               value={title}
             />
@@ -108,8 +145,8 @@ export function CreatePostForm() {
                 id="author"
                 maxLength={32}
                 onChange={(event) => {
-                  setIsPublished(false);
-                  setAuthor(event.target.value);
+                  setFeedback(null)
+                  setAuthor(event.target.value)
                 }}
                 placeholder="Anonymous"
                 value={author}
@@ -124,8 +161,8 @@ export function CreatePostForm() {
                 className="mt-2 w-full border-2 border-black bg-[var(--paper)] px-4 py-3 font-bold outline-none focus:bg-[var(--accent-soft)]"
                 id="category"
                 onChange={(event) => {
-                  setIsPublished(false);
-                  setCategory(event.target.value as PostCategory);
+                  setFeedback(null)
+                  setCategory(event.target.value as PostCategory)
                 }}
                 value={category}
               >
@@ -146,8 +183,8 @@ export function CreatePostForm() {
               className="mt-2 min-h-[50vh] w-full resize-y border-2 border-black bg-[var(--paper)] px-4 py-3 leading-7 outline-none focus:bg-[var(--accent-soft)]"
               id="body"
               onChange={(event) => {
-                setIsPublished(false);
-                setBody(event.target.value);
+                setFeedback(null)
+                setBody(event.target.value)
               }}
               value={body}
             />
@@ -159,11 +196,12 @@ export function CreatePostForm() {
               {body.trim().split(/\s+/).filter(Boolean).length} words
             </span>
             <button
-              className="inline-flex items-center gap-2 rounded-md border-2 border-black bg-black px-5 py-3 font-black text-white shadow-[5px_5px_0_var(--accent)] transition hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-md border-2 border-black bg-black px-5 py-3 font-black text-white shadow-[5px_5px_0_var(--accent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSubmitting}
               type="submit"
             >
               <SendIcon fontSize="small" />
-              Publish
+              {isSubmitting ? "Publishing..." : "Publish"}
             </button>
           </div>
         </form>
@@ -176,5 +214,5 @@ export function CreatePostForm() {
         </aside>
       </section>
     </main>
-  );
+  )
 }

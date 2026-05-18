@@ -1,10 +1,10 @@
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import Link from "next/link";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined"
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome"
+import Link from "next/link"
 
 type SiteHeaderProps = {
-  active?: "about" | "feed" | "create";
-};
+  active?: "about" | "feed" | "create"
+}
 
 export function SiteHeader({ active = "feed" }: SiteHeaderProps) {
   const navItem = (href: string, label: string, key: SiteHeaderProps["active"]) => (
@@ -18,7 +18,7 @@ export function SiteHeader({ active = "feed" }: SiteHeaderProps) {
     >
       {label}
     </Link>
-  );
+  )
 
   return (
     <header className="sticky top-0 z-20 border-b-2 border-black bg-[var(--paper)]">
@@ -45,5 +45,5 @@ export function SiteHeader({ active = "feed" }: SiteHeaderProps) {
         </Link>
       </div>
     </header>
-  );
+  )
 }

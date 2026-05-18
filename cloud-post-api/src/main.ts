@@ -35,7 +35,7 @@ async function bootstrap() {
         autoTagControllers: true,
       }
 
-      return SwaggerModule.createDocument(app, config, options);
+      return SwaggerModule.createDocument(app, config, options)
     }
 
     const swaggerUrl = 'swagger'

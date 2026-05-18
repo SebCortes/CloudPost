@@ -1,39 +1,68 @@
-"use client";
+"use client"
 
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ScheduleIcon from "@mui/icons-material/Schedule";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import Link from "next/link";
-import { useState } from "react";
-import type { Post } from "../lib/posts";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined"
+import FavoriteIcon from "@mui/icons-material/Favorite"
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
+import ScheduleIcon from "@mui/icons-material/Schedule"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import Link from "next/link"
+import { useState } from "react"
+import { likePost, unlikePost, type Post } from "../lib/posts"
 
 const accentClassNames: Record<Post["accent"], string> = {
   violet: "bg-[var(--accent-soft)]",
   sun: "bg-[var(--sun)]",
   mint: "bg-[var(--mint)]",
   rose: "bg-[var(--rose)]",
-};
+}
 
 type PostCardProps = {
-  post: Post;
-  expanded?: boolean;
-};
+  post: Post
+  expanded?: boolean
+}
 
 function getPreview(body: string, expanded: boolean) {
   if (expanded || body.length <= 260) {
-    return body;
+    return body
   }
 
-  return `${body.slice(0, 260).trim()}...`;
+  return `${body.slice(0, 260).trim()}...`
 }
 
 export function PostCard({ post, expanded = false }: PostCardProps) {
-  const [liked, setLiked] = useState(false);
-  const reactionCount = liked ? post.reactions + 1 : post.reactions;
-  const preview = getPreview(post.body, expanded);
-  const isTruncated = !expanded && post.body.length > preview.length;
+  const [liked, setLiked] = useState(false)
+  const [isUpdatingLike, setIsUpdatingLike] = useState(false)
+  const reactionCount = liked ? post.reactions + 1 : post.reactions
+  const preview = getPreview(post.body, expanded)
+  const isTruncated = !expanded && post.body.length > preview.length
+
+  async function handleLikeToggle() {
+    if (isUpdatingLike) {
+      return
+    }
+
+    const nextLikedState = !liked
+
+    setLiked(nextLikedState)
+    setIsUpdatingLike(true)
+
+    try {
+      if (nextLikedState) {
+        await likePost(post.id)
+      } else {
+        await unlikePost(post.id)
+      }
+    } catch {
+      setLiked((currentLiked) => !currentLiked)
+      alert(
+        nextLikedState
+          ? "Failed to like the post. Please try again."
+          : "Failed to unlike the post. Please try again.",
+      )
+    } finally {
+      setIsUpdatingLike(false)
+    }
+  }
 
   return (
     <article className="group border-2 border-black bg-[var(--paper)] p-5 shadow-[6px_6px_0_#101010] transition hover:-translate-y-1 sm:p-7">
@@ -85,7 +114,8 @@ export function PostCard({ post, expanded = false }: PostCardProps) {
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 transition hover:bg-[var(--accent-soft)] ${
               liked ? "text-[var(--accent)]" : ""
             }`}
-            onClick={() => setLiked((current) => !current)}
+            disabled={isUpdatingLike}
+            onClick={handleLikeToggle}
             type="button"
           >
             {liked ? (
@@ -97,7 +127,7 @@ export function PostCard({ post, expanded = false }: PostCardProps) {
           </button>
           <span className="inline-flex items-center gap-1">
             <ChatBubbleOutlineIcon sx={{ fontSize: 18 }} />
-            {post.comments.length}
+            {post.commentCount}
           </span>
           <Link
             className="inline-flex items-center gap-1 rounded-full px-2 py-1 transition hover:bg-[var(--accent-soft)]"
@@ -109,5 +139,5 @@ export function PostCard({ post, expanded = false }: PostCardProps) {
         </div>
       </footer>
     </article>
-  );
+  )
 }

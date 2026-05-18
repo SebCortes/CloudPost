@@ -1,11 +1,19 @@
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import FeedIcon from "@mui/icons-material/Feed";
-import Link from "next/link";
-import { SiteHeader } from "../components/SiteHeader";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined"
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined"
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
+import FeedIcon from "@mui/icons-material/Feed"
+import Link from "next/link"
+import { SiteHeader } from "../components/SiteHeader"
+import { getPostCategories, getPostStats } from "../lib/posts"
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic"
+
+export default async function AboutPage() {
+  const [stats, categories] = await Promise.all([
+    getPostStats(),
+    getPostCategories(),
+  ])
+
   return (
     <>
       <SiteHeader active="about" />
@@ -21,8 +29,8 @@ export default function AboutPage() {
                 Publish a thought. Let the feed do the rest.
               </h1>
               <p className="mt-7 max-w-2xl text-xl leading-8 text-[var(--muted)]">
-                CloudPost is an anonymous publishing platform:
-                a clean feed, post pages, local reactions, and comments.
+                CloudPost is an anonymous publishing platform with a live API
+                feed, post pages, and a clean publishing flow.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
@@ -44,22 +52,28 @@ export default function AboutPage() {
             <div className="grid min-h-[420px] content-between border-t-2 border-black bg-[var(--accent)] p-6 text-white lg:border-t-0 lg:p-10">
               <div className="grid grid-cols-2 gap-4">
                 <div className="border-2 border-black bg-[var(--sun)] p-4 text-black shadow-[4px_4px_0_#101010]">
-                  <p className="text-4xl font-black">3</p>
+                  <p className="text-4xl font-black">{stats.posts}</p>
                   <p className="font-bold">published posts</p>
                 </div>
                 <div className="border-2 border-black bg-[var(--mint)] p-4 text-black shadow-[4px_4px_0_#101010]">
-                  <p className="text-4xl font-black">520</p>
+                  <p className="text-4xl font-black">{stats.likes}</p>
                   <p className="font-bold">likes</p>
                 </div>
               </div>
               <div className="mt-12 border-2 border-black bg-[var(--paper)] p-6 text-black shadow-[8px_8px_0_#101010]">
                 <p className="text-sm font-black uppercase tracking-normal">
-                  How it works
+                  Live categories
                 </p>
-                <p className="mt-3 text-3xl font-black leading-tight">
-                  Write anonymously, read vertically, react quickly, and discuss
-                  posts without account friction.
-                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <span
+                      className="rounded-full border-2 border-black bg-[var(--accent-soft)] px-3 py-1 text-sm font-black"
+                      key={category}
+                    >
+                      {category}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -97,5 +111,5 @@ export default function AboutPage() {
         </section>
       </main>
     </>
-  );
+  )
 }

@@ -1,48 +1,86 @@
-"use client";
+"use client"
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import SendIcon from "@mui/icons-material/Send";
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { Comment, Post } from "../lib/posts";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined"
+import FavoriteIcon from "@mui/icons-material/Favorite"
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
+import SendIcon from "@mui/icons-material/Send"
+import Link from "next/link"
+import { useMemo, useState } from "react"
+import { humanReadablePastDate, likePost, postComment, unlikePost, type Comment, type Post } from "../lib/posts"
 
 type PostReaderProps = {
-  post: Post;
-};
+  post: Post
+  comments: Comment[]
+}
 
-export function PostReader({ post }: PostReaderProps) {
-  const [liked, setLiked] = useState(false);
-  const [comments, setComments] = useState<Comment[]>(post.comments);
-  const [author, setAuthor] = useState("");
-  const [body, setBody] = useState("");
-  const reactionCount = liked ? post.reactions + 1 : post.reactions;
+export function PostReader({ post, comments: initialComments }: PostReaderProps) {
+  const [liked, setLiked] = useState(false)
+  const [isUpdatingLike, setIsUpdatingLike] = useState(false)
+  const [comments, setComments] = useState<Comment[]>(initialComments)
+  const [author, setAuthor] = useState("")
+  const [body, setBody] = useState("")
+  const reactionCount = liked ? post.reactions + 1 : post.reactions
+  const commentCount = post.commentCount + comments.length
+  
+  async function handleLikeToggle() {
+    if (isUpdatingLike) {
+      return
+    }
+
+    const nextLikedState = !liked
+
+    setLiked(nextLikedState)
+    setIsUpdatingLike(true)
+
+    try {
+      if (nextLikedState) {
+        await likePost(post.id)
+      } else {
+        await unlikePost(post.id)
+      }
+    } catch {
+      setLiked((currentLiked) => !currentLiked)
+      alert(
+        nextLikedState
+          ? "Failed to like the post. Please try again."
+          : "Failed to unlike the post. Please try again.",
+      )
+    } finally {
+      setIsUpdatingLike(false)
+    }
+  }
 
   const wordCount = useMemo(
     () => post.body.trim().split(/\s+/).filter(Boolean).length,
     [post.body],
-  );
+  )
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
 
     if (!body.trim()) {
-      return;
+      return
     }
 
-    setComments((currentComments) => [
-      {
-        id: Date.now(),
-        author: author.trim() || "Anonymous",
-        body: body.trim(),
-        publishedAt: "Just now",
-      },
-      ...currentComments,
-    ]);
-    setBody("");
-    setAuthor("");
+    const authorName = author.trim() || "Anonymous"
+    const content = body.trim()
+
+    try {
+      const data = await postComment(post.id, authorName, content)
+      setComments((currentComments) => [{
+        id: data.id,
+        authorName: data.authorName,
+        content: data.content,
+        createdAt: data.createdAt,
+      } as Comment,
+      ...currentComments
+      ])
+      setAuthor("")
+      setBody("")
+    } catch {
+      alert("Failed to post comment. Please try again.")
+    }
   }
 
   return (
@@ -71,9 +109,6 @@ export function PostReader({ post }: PostReaderProps) {
         <h1 className="text-4xl font-black leading-tight sm:text-6xl">
           {post.title}
         </h1>
-        <p className="mt-5 text-xl leading-8 text-[var(--muted)]">
-          {post.excerpt}
-        </p>
 
         <div className="mt-8 whitespace-pre-line border-y-2 border-black py-8 text-lg leading-9">
           {post.body}
@@ -99,7 +134,7 @@ export function PostReader({ post }: PostReaderProps) {
                 ? "bg-[var(--accent)] text-white"
                 : "bg-white text-black hover:bg-[var(--accent-soft)]"
             }`}
-            onClick={() => setLiked((current) => !current)}
+            onClick={handleLikeToggle}
             type="button"
           >
             {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
@@ -115,7 +150,7 @@ export function PostReader({ post }: PostReaderProps) {
           </p>
           <h2 className="mt-1 flex items-center gap-2 text-3xl font-black">
             <ChatBubbleOutlineIcon />
-            {comments.length} comments
+            {commentCount} comments
           </h2>
         </div>
 
@@ -154,16 +189,16 @@ export function PostReader({ post }: PostReaderProps) {
               key={comment.id}
             >
               <div className="flex items-center justify-between gap-4">
-                <p className="font-black">{comment.author}</p>
+                <p className="font-black">{comment.authorName}</p>
                 <p className="text-sm font-semibold text-[var(--muted)]">
-                  {comment.publishedAt}
+                  {humanReadablePastDate(comment.createdAt)}
                 </p>
               </div>
-              <p className="mt-3 leading-7 text-[var(--muted)]">{comment.body}</p>
+              <p className="mt-3 leading-7 text-[var(--muted)]">{comment.content}</p>
             </article>
           ))}
         </div>
       </section>
     </main>
-  );
+  )
 }

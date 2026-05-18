@@ -1,57 +1,12 @@
-import { BadRequestException, Body, Controller, DefaultValuePipe, Delete, Get, HttpCode, NotFoundException, Param, ParseEnumPipe, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
-import { PostService } from './post.service';
-import { RequiredPipe } from '../required/required.pipe';
-import { $Enums, PostCategory, Prisma } from '../generated/prisma/client';
-import { ZodValidationPipe } from '../zod-validation-pipe/zod-validation-pipe.pipe';
-import { createPostOpenApiSchema, createPostSchema, postCategoryOpenApiSchema, updatePostOpenApiSchema, updatePostSchema } from './post.dto';
-import type { CreatePostDto, UpdatePostDto } from './post.dto';
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-
-enum orderByAll {
-  createdAt = 'createdAt',
-  title = 'title',
-  authorName = 'authorName',
-  numberOfLikes = 'numberOfLikes',
-  timeToRead = 'timeToRead',
-}
-
-const postListItemOpenApiSchema = {
-  type: 'object',
-  properties: {
-    id: { type: 'string', format: 'uuid' },
-    title: { type: 'string' },
-    authorName: { type: 'string' },
-    content: { type: 'string' },
-    category: postCategoryOpenApiSchema,
-    numberOfLikes: { type: 'integer', example: 12 },
-    numberOfWords: { type: 'integer', example: 420 },
-    timeToRead: { type: 'integer', example: 3 },
-    createdAt: { type: 'string', format: 'date-time' },
-    updatedAt: { type: 'string', format: 'date-time' },
-    _count: {
-      type: 'object',
-      properties: {
-        comments: { type: 'integer', example: 4 },
-      },
-    },
-  },
-} as const
-
-const postOpenApiSchema = {
-  type: 'object',
-  properties: {
-    id: { type: 'string', format: 'uuid' },
-    title: { type: 'string' },
-    content: { type: 'string' },
-    authorName: { type: 'string' },
-    category: postCategoryOpenApiSchema,
-    numberOfLikes: { type: 'integer', example: 12 },
-    numberOfWords: { type: 'integer', example: 420 },
-    timeToRead: { type: 'integer', example: 3 },
-    createdAt: { type: 'string', format: 'date-time' },
-    updatedAt: { type: 'string', format: 'date-time' },
-  },
-} as const
+import { BadRequestException, Body, Controller, DefaultValuePipe, Delete, Get, HttpCode, NotFoundException, Param, ParseEnumPipe, ParseIntPipe, Patch, Post, Query } from '@nestjs/common'
+import { PostService } from './post.service'
+import { RequiredPipe } from '../required/required.pipe'
+import { $Enums, PostCategory, Prisma } from '../generated/prisma/client'
+import { ZodValidationPipe } from '../zod-validation-pipe/zod-validation-pipe.pipe'
+import { createCommentOpenApiSchema, createCommentSchema, createPostOpenApiSchema, createPostSchema, postCategoryOpenApiSchema, updatePostOpenApiSchema, updatePostSchema } from './post.dto'
+import type { CreateCommentDto, CreatePostDto, UpdatePostDto } from './post.dto'
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger'
+import { orderByAll, postListItemOpenApiSchema, postOpenApiSchema } from './const'
 
 @ApiTags('posts')
 @Controller('post')
@@ -95,7 +50,6 @@ export class PostController {
     @Query('category', new ParseEnumPipe($Enums.PostCategory, { optional: true })) category?: PostCategory | null,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number | null,
     @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize?: number | null,
-  
   ): Promise<{
     posts: Awaited<ReturnType<PostService['posts']>>
     page: number
@@ -379,6 +333,84 @@ export class PostController {
     })
   }
 
+  @Post(':id/like')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Like a post' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid', description: 'Post identifier.' })
+  @ApiNoContentResponse({ description: 'Post liked successfully.' })
+  @ApiBadRequestResponse({ description: 'Post id is missing or invalid.' })
+  @ApiNotFoundResponse({ description: 'Post not found.' })
+  async likePost(
+    @Param('id', new RequiredPipe()) id: string,
+  ) {
+    await this.postService.likePost(id)
+  }
+
+  @Delete(':id/like')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Remove a like from a post' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid', description: 'Post identifier.' })
+  @ApiNoContentResponse({ description: 'Like removed successfully.' })
+  @ApiBadRequestResponse({ description: 'Post id is missing or invalid.' })
+  @ApiNotFoundResponse({ description: 'Post not found.' })
+  async unlikePost(
+    @Param('id', new RequiredPipe()) id: string,
+  ) {
+    await this.postService.removeLike(id)
+  }
+
+  @Get(':id/comment/all')
+  @ApiOperation({ summary: 'List comments of a post' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid', description: 'Post identifier.' })
+  @ApiOkResponse({
+    description: 'Comments returned successfully.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          authorName: { type: 'string' },
+          content: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Post id is missing or invalid.' })
+  @ApiNotFoundResponse({ description: 'Post not found.' })
+  async comments(
+    @Param('id', new RequiredPipe()) id: string,
+  ) {
+    return await this.postService.getCommentsOfPost(id)
+  }
+
+  @Post(':id/comment')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Add a comment to a post' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid', description: 'Post identifier.' })
+  @ApiBody({
+    description: 'Comment creation payload.',
+    schema: createCommentOpenApiSchema,
+  })
+  @ApiCreatedResponse({ description: 'Comment added successfully.' })
+  @ApiBadRequestResponse({ description: 'Invalid post id or request body.' })
+  @ApiNotFoundResponse({ description: 'Post not found.' })
+  async postComment(
+    @Param('id', new RequiredPipe()) id: string,
+    @Body(new ZodValidationPipe(createCommentSchema)) body: CreateCommentDto,
+  ) {
+    const { authorName, content } = body
+
+    return await this.postService.postComment({
+      data: {
+        postId: id,
+        authorName,
+        content,
+      },
+    })
+  }
+
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Create a post' })
@@ -388,12 +420,21 @@ export class PostController {
   })
   @ApiCreatedResponse({ description: 'Post created successfully.' })
   @ApiBadRequestResponse({ description: 'Invalid request body.' })
+  @ApiOkResponse({
+    description: 'Post created successfully (for clients that do not support 201 status code).',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
   async createPost(
     @Body(new ZodValidationPipe(createPostSchema)) body: CreatePostDto,
   ) {
     const { title, content, authorName, category } = body
 
-    await this.postService.createPost({
+    const post = await this.postService.createPost({
       data: {
         title,
         content,
@@ -401,5 +442,9 @@ export class PostController {
         category,
       }
     })
+
+    return {
+      id: post.id,
+    }
   }
 }

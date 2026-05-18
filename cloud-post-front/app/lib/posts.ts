@@ -1,139 +1,303 @@
-export type PostCategory =
-  | "Idea"
-  | "Design"
-  | "Product"
-  | "Journal"
-  | "Question";
+import axios from "axios"
+
+export const postCategories = [
+  "Idea",
+  "Question",
+  "Announcement",
+  "Tutorial",
+  "Story",
+] as const
+
+export type PostCategory = (typeof postCategories)[number]
+
+export const feedCategories = ["All", ...postCategories] as const
+
+export type FeedCategory = (typeof feedCategories)[number]
 
 export type Comment = {
-  id: number;
-  author: string;
-  body: string;
-  publishedAt: string;
-};
+  id: string
+  authorName: string
+  content: string
+  createdAt: string
+}
+
+export type PostAccent = "violet" | "sun" | "mint" | "rose"
 
 export type Post = {
-  id: number;
-  title: string;
-  excerpt: string;
-  body: string;
-  author: string;
-  category: PostCategory;
-  readTime: string;
-  publishedAt: string;
-  reactions: number;
-  comments: Comment[];
-  accent: "violet" | "sun" | "mint" | "rose";
-};
+  id: string
+  title: string
+  excerpt: string
+  body: string
+  author: string
+  category: PostCategory
+  readTime: string
+  publishedAt: string
+  reactions: number
+  commentCount: number
+  accent: PostAccent
+  createdAt: string
+  updatedAt: string
+}
 
-export const categories: Array<PostCategory | "All"> = [
-  "All",
-  "Idea",
-  "Design",
-  "Product",
-  "Journal",
-  "Question",
-];
+export type PostOrderField =
+  | "createdAt"
+  | "title"
+  | "authorName"
+  | "numberOfLikes"
+  | "timeToRead"
 
-export const initialPosts: Post[] = [
-  {
-    id: 1,
-    title: "Small ideas deserve a public shelf too",
-    excerpt:
-      "A short note about public drafts, imperfect thinking, and the relief of publishing without a profile.",
-    body: "Publishing anonymously removes part of the social theater. What remains is the idea, its clarity, its rhythm, and the way readers respond to it.\n\nThat makes small posts feel lighter. You do not have to arrive with a finished essay or a polished identity. You can share a thought while it is still warm and let the feed test whether it has a pulse.\n\nThe best part is that the post can stand on its own. No follower count, no biography, no reputation management. Just a title, a few paragraphs, and a chance for someone else to recognize the shape of the thought.",
-    author: "Anonymous",
-    category: "Idea",
-    readTime: "3 min",
-    publishedAt: "12 min ago",
-    reactions: 48,
-    comments: [
-      {
-        id: 1,
-        author: "Quiet Reader",
-        body: "This is exactly why anonymous spaces can feel more honest.",
-        publishedAt: "8 min ago",
-      },
-      {
-        id: 2,
-        author: "Anonymous",
-        body: "I like the idea of testing a thought before attaching identity to it.",
-        publishedAt: "3 min ago",
-      },
-    ],
-    accent: "violet",
-  },
-  {
-    id: 2,
-    title: "A feed should make people slow down",
-    excerpt:
-      "Less friction, more breathing room: a design proposal for reading without the usual noise.",
-    body: "The best feeds do not simply stack cards. They create a cadence, give the eye a place to rest, and make each post feel like it has enough space to be considered.\n\nThat means hierarchy matters. Tags should help readers orient themselves, not shout for attention. Reaction counts should be available, but not louder than the writing. Search should feel like a tool, not a command center.\n\nA good feed is not empty minimalism. It is a confident editing decision: show the writing, reduce the ceremony, and let readers move at a human pace.",
-    author: "Cloud 402",
-    category: "Design",
-    readTime: "5 min",
-    publishedAt: "1 h ago",
-    reactions: 91,
-    comments: [
-      {
-        id: 1,
-        author: "Pixel Guest",
-        body: "The vertical layout already helps. It feels more like reading and less like browsing.",
-        publishedAt: "42 min ago",
-      },
-    ],
-    accent: "rose",
-  },
-  {
-    id: 3,
-    title: "Why I write product specs like letters",
-    excerpt:
-      "A simple method for turning product constraints into readable intent.",
-    body: "A spec gets better when it gives context before solutions. The reader understands the direction, not just the checklist.\n\nWriting it like a letter changes the tone. You explain what changed, what you noticed, what still feels uncertain, and what decision needs to happen next. It creates a little room for judgment.\n\nThe result is still practical. Requirements are clearer because they are attached to a reason. Tradeoffs become easier to discuss because everyone can see the original intent.",
-    author: "Anonymous",
-    category: "Product",
-    readTime: "4 min",
-    publishedAt: "Yesterday",
-    reactions: 67,
-    comments: [
-      {
-        id: 1,
-        author: "Spec Fan",
-        body: "A narrative spec is so much easier to review than a giant list.",
-        publishedAt: "Yesterday",
-      },
-    ],
-    accent: "mint",
-  },
-  {
-    id: 4,
-    title: "Open question: should drafts be signed?",
-    excerpt:
-      "A pseudonym protects the writer, but a signature creates accountability. Where should the line sit?",
-    body: "I like anonymity because it makes a thought easier to test. But I wonder whether an idea grows better when someone is willing to stand beside it.\n\nMaybe the answer depends on the stage. Early drafts may need privacy. Mature arguments may need a name. The tricky part is designing a space where both can exist without forcing every post into the same social contract.",
-    author: "Masked Reader",
-    category: "Question",
-    readTime: "2 min",
-    publishedAt: "Yesterday",
-    reactions: 33,
-    comments: [
-      {
-        id: 1,
-        author: "Anonymous",
-        body: "Maybe signing should be a later step, not a requirement at creation.",
-        publishedAt: "Yesterday",
-      },
-      {
-        id: 2,
-        author: "Draft Keeper",
-        body: "This is a product question as much as a writing question.",
-        publishedAt: "Yesterday",
-      },
-    ],
-    accent: "sun",
-  },
-];
+export type SortOrder = "asc" | "desc"
 
-export function getPostById(id: string) {
-  return initialPosts.find((post) => post.id.toString() === id);
+export type PostsQuery = {
+  orderBy?: PostOrderField
+  orderDirection?: SortOrder
+  query?: string
+  category?: PostCategory
+  page?: number
+  pageSize?: number
+}
+
+export type PostsPage = {
+  posts: Post[]
+  page: number
+  pageSize: number
+  totalPages: number
+  totalItems: number
+}
+
+export type CreatePostInput = {
+  title: string
+  content: string
+  authorName: string
+  category: PostCategory
+}
+
+export type UpdatePostInput = Partial<Pick<CreatePostInput, "title" | "content" | "category">>
+
+type ApiPostListItem = {
+  id: string
+  title: string
+  authorName: string
+  content: string
+  category: PostCategory
+  numberOfLikes: number
+  numberOfWords: number
+  timeToRead: number
+  createdAt: string
+  updatedAt: string
+  _count: {
+    comments: number
+  }
+}
+
+type ApiPost = Omit<ApiPostListItem, "_count">
+
+const api = axios.create({
+  baseURL: (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001").replace(/\/$/, ""),
+})
+
+const accentByCategory: Record<PostCategory, PostAccent> = {
+  Idea: "violet",
+  Question: "sun",
+  Announcement: "mint",
+  Tutorial: "rose",
+  Story: "violet",
+}
+
+export function getPostAccent(category: PostCategory): PostAccent {
+  return accentByCategory[category]
+}
+
+export function buildExcerpt(content: string) {
+  const normalizedContent = content.replace(/\s+/g, " ").trim()
+
+  if (normalizedContent.length <= 132) {
+    return normalizedContent
+  }
+
+  return `${normalizedContent.slice(0, 132).trim()}...`
+}
+
+export function formatReadTime(timeToRead: number) {
+  return `${Math.max(1, timeToRead)} min`
+}
+
+export function humanReadablePastDate(value: string) {
+  const publishedDate = new Date(value)
+  const diffInMs = Date.now() - publishedDate.getTime()
+
+  if (Number.isNaN(publishedDate.getTime()) || diffInMs < 0) {
+    return "Just now"
+  }
+
+  if (diffInMs < 60_000) {
+    return "Just now"
+  }
+
+  if (diffInMs < 3_600_000) {
+    return `${Math.max(1, Math.floor(diffInMs / 60_000))} min ago`
+  }
+
+  if (diffInMs < 86_400_000) {
+    return `${Math.max(1, Math.floor(diffInMs / 3_600_000))} h ago`
+  }
+
+  if (diffInMs < 172_800_000) {
+    return "Yesterday"
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(publishedDate)
+}
+
+function mapApiPostToPost(post: ApiPost, commentCount = 0): Post {
+  return {
+    id: post.id,
+    title: post.title,
+    excerpt: buildExcerpt(post.content),
+    body: post.content,
+    author: post.authorName,
+    category: post.category,
+    readTime: formatReadTime(post.timeToRead),
+    publishedAt: humanReadablePastDate(post.createdAt),
+    reactions: post.numberOfLikes,
+    commentCount,
+    accent: getPostAccent(post.category),
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+  }
+}
+
+function mapApiListItemToPost(post: ApiPostListItem): Post {
+  return mapApiPostToPost(post, post._count.comments)
+}
+
+export function buildDraftPost(params: {
+  title: string
+  body: string
+  author: string
+  category: PostCategory
+}): Post {
+  const createdAt = new Date().toISOString()
+
+  return {
+    id: "draft",
+    title: params.title.trim() || "Your post title",
+    excerpt: buildExcerpt(params.body) || "The first lines of your post will appear here.",
+    body: params.body.trim() || "Your content will appear in the preview.",
+    author: params.author.trim() || "Anonymous",
+    category: params.category,
+    readTime: formatReadTime(Math.max(1, Math.ceil(params.body.trim().split(/\s+/).filter(Boolean).length / 200))),
+    publishedAt: "Just now",
+    reactions: 0,
+    commentCount: 0,
+    accent: getPostAccent(params.category),
+    createdAt,
+    updatedAt: createdAt,
+  }
+}
+
+export async function getPosts(params: PostsQuery = {}): Promise<PostsPage> {
+  const { data } = await api.get<{
+    posts: ApiPostListItem[]
+    page: number
+    pageSize: number
+    totalPages: number
+    totalItems: number
+  }>("/post/all", {
+    params: {
+      ...params,
+      ...(params.category ? { category: params.category } : {}),
+    },
+  })
+
+  return {
+    ...data,
+    posts: data.posts.map(mapApiListItemToPost),
+  }
+}
+
+export async function getPost(id: string): Promise<Post | null> {
+  try {
+    const { data } = await api.get<ApiPost>(`/post/${id}`)
+
+    return mapApiPostToPost(data)
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null
+    }
+
+    throw error
+  }
+}
+
+export async function getPostCategories() {
+  const { data } = await api.get<PostCategory[]>("/post/category")
+
+  return data
+}
+
+export async function countPosts() {
+  const { data } = await api.get<{ count: number }>("/post/stats/count")
+
+  return data.count
+}
+
+export async function countLikes() {
+  const { data } = await api.get<{ count: number }>("/post/stats/likes")
+
+  return data.count
+}
+
+export async function getPostStats() {
+  const [posts, likes] = await Promise.all([countPosts(), countLikes()])
+
+  return {
+    posts,
+    likes,
+  }
+}
+
+export async function createPost(payload: CreatePostInput) {
+  const { data } = await api.post<{ id: string }>("/post", payload)
+  return data.id
+}
+
+export async function updatePost(id: string, payload: UpdatePostInput) {
+  await api.patch(`/post/${id}`, payload)
+}
+
+export async function deletePost(id: string) {
+  await api.delete(`/post/${id}`)
+}
+
+export async function likePost(id: string) {
+  await api.post(`/post/${id}/like`)
+}
+
+export async function unlikePost(id: string) {
+  await api.delete(`/post/${id}/like`)
+}
+
+export async function getComments(postId: string) {
+  const { data } = await api.get<Comment[]>(`/post/${postId}/comment/all`)
+  return data
+}
+
+export async function postComment(postId: string, authorName: string, content: string) {
+  const { data } = await api.post<{
+    content: string
+    createdAt: string
+    authorName: string
+    id: string
+    updatedAt: string
+    postId: string
+  }>(`/post/${postId}/comment`, {
+    authorName,
+    content,
+  })
+
+  return data
 }

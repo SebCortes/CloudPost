@@ -1,33 +1,123 @@
-"use client";
+"use client"
 
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import SearchIcon from "@mui/icons-material/Search";
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { PostCard } from "./PostCard";
-import { categories, initialPosts, type PostCategory } from "../lib/posts";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlineOutlined"
+import SearchIcon from "@mui/icons-material/Search"
+import Link from "next/link"
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react"
+import { PostCard } from "./PostCard"
+import { feedCategories, getPosts, type FeedCategory, type Post, type PostCategory } from "../lib/posts"
 
-type FeedFilter = PostCategory | "All";
+const defaultPageSize = 6
 
-export function PostFeed() {
-  const [posts] = useState(initialPosts);
-  const [activeFilter, setActiveFilter] = useState<FeedFilter>("All");
-  const [query, setQuery] = useState("");
+type FeedFilter = FeedCategory
 
-  const visiblePosts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+type PostFeedProps = {
+  initialPosts: Post[]
+  initialPage: number
+  initialPageSize: number
+  initialTotalPages: number
+  initialTotalItems: number
+}
 
-    return posts.filter((post) => {
-      const matchesFilter = activeFilter === "All" || post.category === activeFilter;
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        `${post.title} ${post.excerpt} ${post.body}`
-          .toLowerCase()
-          .includes(normalizedQuery);
+export function PostFeed({
+  initialPosts,
+  initialPage,
+  initialPageSize,
+  initialTotalPages,
+  initialTotalItems,
+}: PostFeedProps) {
+  const [posts, setPosts] = useState(initialPosts)
+  const [activeFilter, setActiveFilter] = useState<FeedFilter>("All")
+  const [query, setQuery] = useState("")
+  const deferredQuery = useDeferredValue(query)
+  const [page, setPage] = useState(initialPage)
+  const [totalPages, setTotalPages] = useState(initialTotalPages)
+  const [totalItems, setTotalItems] = useState(initialTotalItems)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const hasMountedRef = useRef(false)
+  const requestIdRef = useRef(0)
 
-      return matchesFilter && matchesQuery;
-    });
-  }, [activeFilter, posts, query]);
+  const loadPage = useCallback(
+    async (nextPage: number, replace: boolean) => {
+      const currentRequestId = ++requestIdRef.current
+
+      setIsLoading(true)
+
+      if (replace) {
+        setPage(1)
+        setTotalPages(1)
+        setTotalItems(0)
+      }
+
+      try {
+        const response = await getPosts({
+          page: nextPage,
+          pageSize: initialPageSize || defaultPageSize,
+          query: deferredQuery.trim() || undefined,
+          category: activeFilter === "All" ? undefined : (activeFilter as PostCategory),
+          orderBy: "createdAt",
+          orderDirection: "desc",
+        })
+
+        if (currentRequestId !== requestIdRef.current) {
+          return
+        }
+
+        setPosts((currentPosts) => (replace ? response.posts : [...currentPosts, ...response.posts]))
+        setPage(response.page)
+        setTotalPages(response.totalPages)
+        setTotalItems(response.totalItems)
+        setError(null)
+      } catch {
+        if (currentRequestId === requestIdRef.current) {
+          setError("We could not load the feed right now.")
+        }
+      } finally {
+        if (currentRequestId === requestIdRef.current) {
+          setIsLoading(false)
+        }
+      }
+    },
+    [activeFilter, deferredQuery, initialPageSize],
+  )
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+
+    void loadPage(1, true)
+  }, [activeFilter, deferredQuery, initialPageSize, loadPage])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+
+    if (!sentinel) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+
+        if (!entry?.isIntersecting || isLoading || page >= totalPages) {
+          return
+        }
+
+        void loadPage(page + 1, false)
+      },
+      {
+        rootMargin: "400px",
+      },
+    )
+
+    observer.observe(sentinel)
+
+    return () => observer.disconnect()
+  }, [activeFilter, deferredQuery, initialPageSize, isLoading, loadPage, page, totalPages])
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -68,7 +158,7 @@ export function PostFeed() {
         </label>
 
         <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map((category) => (
+          {feedCategories.map((category) => (
             <button
               className={`shrink-0 rounded-full border-2 border-black px-4 py-2 text-sm font-black transition ${
                 activeFilter === category
@@ -85,9 +175,22 @@ export function PostFeed() {
         </div>
       </section>
 
+      <section className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm font-bold text-[var(--muted)]">
+        <p>
+          {totalItems} post{totalItems === 1 ? "" : "s"} loaded
+        </p>
+        {isLoading ? <p className="text-[var(--accent)]">Loading feed...</p> : null}
+      </section>
+
+      {error ? (
+        <div className="mb-6 border-2 border-black bg-[var(--sun)] p-4 font-bold shadow-[4px_4px_0_#101010]">
+          {error}
+        </div>
+      ) : null}
+
       <section className="grid gap-6">
-        {visiblePosts.length > 0 ? (
-          visiblePosts.map((post) => <PostCard key={post.id} post={post} />)
+        {posts.length > 0 ? (
+          posts.map((post) => <PostCard key={post.id} post={post} />)
         ) : (
           <div className="border-2 border-black bg-white p-10 text-center shadow-[6px_6px_0_#101010]">
             <p className="text-2xl font-black">No posts found.</p>
@@ -97,6 +200,8 @@ export function PostFeed() {
           </div>
         )}
       </section>
+
+      <div ref={sentinelRef} className="h-8" aria-hidden="true" />
     </main>
-  );
+  )
 }

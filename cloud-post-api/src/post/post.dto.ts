@@ -109,3 +109,35 @@ export const updatePostOpenApiSchema = {
     category: postCategoryValues[0],
   },
 }
+
+export const createCommentSchema = z
+  .object({
+    authorName: authorNameSchema,
+    content: z
+      .string()
+      .trim()
+      .min(1, minText('Content', 1))
+      .max(1000, maxText('Content', 1000)),
+  })
+  .required()
+
+export type CreateCommentDto = z.infer<typeof createCommentSchema>
+
+export const createCommentOpenApiSchema = {
+  type: 'object',
+  required: ['authorName', 'content'],
+  properties: {
+    authorName: {
+      type: 'string',
+      example: 'John Doe',
+    },
+    content: {
+      type: 'string',
+      example: 'Great post!',
+    },
+  },
+  example: {
+    authorName: 'Jane Doe',
+    content: 'This is a comment on the post.',
+  },
+}

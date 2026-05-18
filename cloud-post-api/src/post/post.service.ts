@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { PostCategory, Prisma } from '../generated/prisma/client'
+import { Mutex } from 'async-mutex'
 
 @Injectable()
 export class PostService {
@@ -53,6 +54,56 @@ export class PostService {
     })
     
     return result._sum.numberOfLikes ?? 0
+  }
+
+  private mutex = new Mutex()
+
+  async likePost(id: string) {
+    return this.mutex.runExclusive(async () => {
+      const post = await this.prisma.post.findUnique({
+        where: { id },
+        select: { numberOfLikes: true },
+      })
+
+      if (!post) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
+
+      return this.prisma.post.update({
+        where: { id },
+        data: {
+          numberOfLikes: {
+            increment: 1,
+          },
+        },
+      })
+    })
+  }
+
+  async removeLike(id: string) {
+    return this.mutex.runExclusive(async () => {
+      const post = await this.prisma.post.findUnique({
+        where: { id },
+        select: { numberOfLikes: true },
+      })
+
+      if (!post) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
+
+      if (post.numberOfLikes <= 0) {
+        throw new BadRequestException(`Post with ID ${id} has no likes to remove`)
+      }
+
+      return this.prisma.post.update({
+        where: { id },
+        data: {
+          numberOfLikes: {
+            decrement: 1,
+          },
+        },
+      })
+    })
   }
 
   async post(params: {
@@ -141,6 +192,41 @@ export class PostService {
 
     return this.prisma.post.delete({
       where,
+    })
+  }
+
+  async getCommentsOfPost(id: string) {
+    return this.prisma.comment.findMany({
+      where: {
+        postId: id,
+      },
+      select: {
+        id: true,
+        authorName: true,
+        content: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+  }
+
+  async postComment(params: {
+    data: {
+      postId: string
+      authorName: string
+      content: string
+    }
+  }) {
+    const { postId, authorName, content } = params.data
+
+    return this.prisma.comment.create({
+      data: {
+        postId,
+        authorName,
+        content,
+      },
     })
   }
 }
