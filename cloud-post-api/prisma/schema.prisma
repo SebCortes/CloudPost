@@ -10,9 +10,41 @@ datasource db {
 
 
 model Post {
-  id        String   @id @default(uuid())
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String       @id @default(uuid())
+  
+  title           String
+  content         String
+  authorName      String
+  numberOfLikes   Int          @default(0)
+  comments        Comment[]
+  @@index([category])
+  category        PostCategory
+  
+  numberOfWords   Int
+  timeToRead      Int
+  
+  @@index([createdAt])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+enum PostCategory {
+  Idea
+  Question
+  Announcement
+  Tutorial
+  Story
+}
+
+model Comment {
+  id              String   @id @default(uuid())
+  @@index([postId])
+  postId          String
+  post            Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  authorName      String
+  content         String
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

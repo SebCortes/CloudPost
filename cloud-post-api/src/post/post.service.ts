@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Prisma } from '../generated/prisma/client'
+import { PostCategory, Prisma } from '../generated/prisma/client'
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly prisma: PrismaService,
-  ) {
-
-  }
+  ) { }
 
   async posts(params: {
     select?: Prisma.PostSelect
@@ -40,6 +38,23 @@ export class PostService {
     })
   }
 
+  async countLikes(
+    params: {
+      where?: Prisma.PostWhereInput
+    }
+  ) {
+    const { where } = params
+
+    const result = await this.prisma.post.aggregate({
+      where,
+      _sum: {
+        numberOfLikes: true,
+      },
+    })
+    
+    return result._sum.numberOfLikes ?? 0
+  }
+
   async post(params: {
     where: Prisma.PostWhereUniqueInput
     select?: Prisma.PostSelect
@@ -52,24 +67,69 @@ export class PostService {
     })
   }
 
-  async updatePost(params: {
-    where: Prisma.PostWhereUniqueInput
-    data: Prisma.PostUpdateInput
-  }) {
-    const { where, data } = params
+  public numberOfWordsAndTimeToRead(content: string) {
+    const numberOfWords = content
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .length
+    const timeToRead = Math.ceil(numberOfWords / 200)
 
-    return this.prisma.post.update({
-      where,
-      data,
-    })
+    return {
+      numberOfWords,
+      timeToRead,
+    }
   }
 
   async createPost(params: {
-    data: Prisma.PostCreateInput
+    data: {
+      title: string
+      content: string
+      authorName: string
+      category: PostCategory
+    }
   }) {
-    const { data } = params
+    const { numberOfWords, timeToRead } = this.numberOfWordsAndTimeToRead(params.data.content)
+
+    const { title, content, authorName, category } = params.data
 
     return this.prisma.post.create({
+      data: {
+        title,
+        content,
+        authorName,
+        category,
+        numberOfWords,
+        timeToRead,
+      }
+    })
+  }
+
+  async updatePost(params: {
+    where: Prisma.PostWhereUniqueInput
+    data: {
+      title?: string
+      content?: string
+      category?: PostCategory
+    }
+  }) {
+    const { where, data } = params
+
+    if (data.content !== undefined) {
+      const { numberOfWords, timeToRead } = this.numberOfWordsAndTimeToRead(data.content)
+
+      return this.prisma.post.update({
+        where,
+        data: {
+          ...data,
+          numberOfWords,
+          timeToRead,
+        }
+      })
+    }
+
+    return this.prisma.post.update({
+      where,
       data,
     })
   }
