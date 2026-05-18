@@ -19,9 +19,9 @@ This project is still a work in progress, and some features are not yet implemen
 - [x] Nest JS Setup
 - [x] Next JS Setup
 - [x] Backend done
-- [ ] Frontend done
+- [x] Frontend done
+- [x] Add documentation to Nest JS
 - [ ] Terraform code for AWS infrastructure setup
-- [ ] Add documentation to Nest JS
 - [ ] CI/CD pipeline with GitHub Actions and AWS ECR
 - [ ] Observability stack with Grafana, Prometheus and Loki
 
