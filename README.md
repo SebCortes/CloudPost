@@ -2,6 +2,8 @@
 
 Cloud Post is a production-ready sample web application designed to demonstrate how to build a simple microservices architecture on AWS. It includes infrastructure as code for the main application, an observability stack, and a CI/CD pipeline. It allows users to create and manage posts, with a simple frontend and backend architecture.
 
+![alt text](./static/image.png)
+
 ## Summary
 
 - [Technologies used](#technologies-used)
@@ -14,7 +16,8 @@ Cloud Post is a production-ready sample web application designed to demonstrate 
 
 ## TODO
 
-This project is still a work in progress, and some features are not yet implemented.
+> [!NOTE]
+> This project is still a work in progress, and some features are not yet implemented.
 - [x] Local development setup with Docker Compose
 - [x] Nest JS Setup
 - [x] Next JS Setup
@@ -169,6 +172,18 @@ As this is a simple sample application, some features have not been implemented.
 ### Local deployment
 
 The application can be deployed locally using Docker Compose. This is useful for development and testing purposes, but not recommended for production use.
+
+#### Configure environment variables
+
+A `.env` needs to be created in the root of the project. First copy the `example.env` file.
+
+```
+cp example.env .env
+```
+
+Then fill in the required values depending on your local setup.
+
+#### Start the application using Docker Compose
 
 ```bash
 ./local-setup.sh
