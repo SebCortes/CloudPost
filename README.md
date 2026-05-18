@@ -18,8 +18,8 @@ This project is still a work in progress, and some features are not yet implemen
 - [x] Local development setup with Docker Compose
 - [x] Nest JS Setup
 - [x] Next JS Setup
-- [x] Finish frontend
-- [ ] Finish backend
+- [x] Backend done
+- [ ] Frontend done
 - [ ] Terraform code for AWS infrastructure setup
 - [ ] Add documentation to Nest JS
 - [ ] CI/CD pipeline with GitHub Actions and AWS ECR
