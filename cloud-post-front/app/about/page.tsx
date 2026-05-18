@@ -29,7 +29,7 @@ export default async function AboutPage() {
                 Publish a thought. Let the feed do the rest.
               </h1>
               <p className="mt-7 max-w-2xl text-xl leading-8 text-[var(--muted)]">
-                CloudPost is an anonymous publishing platform with a live API
+                CloudPost is an anonymous publishing platform with a live
                 feed, post pages, and a clean publishing flow.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
