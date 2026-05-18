@@ -17,7 +17,9 @@ Cloud Post is a production-ready sample web application designed to demonstrate 
 This project is still a work in progress, and some features are not yet implemented.
 - [x] Local development setup with Docker Compose
 - [x] Nest JS Setup
-- [ ] Next JS Setup
+- [x] Next JS Setup
+- [x] Finish frontend
+- [ ] Finish backend
 - [ ] Terraform code for AWS infrastructure setup
 - [ ] Add documentation to Nest JS
 - [ ] CI/CD pipeline with GitHub Actions and AWS ECR
@@ -201,12 +203,10 @@ npx env-cmd -f ../.env npx prisma migrate dev
 
 Start backend
 ```bash
-cd cloud-post-api
-npm run start:dev
+cd cloud-post-api && npx prisma generate && npm run start:dev
 ```
 
 Start frontend
 ```bash
-cd cloud-post-front
-npm run dev
+cd cloud-post-front && npm run dev
 ```
