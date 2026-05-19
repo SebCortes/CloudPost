@@ -2,7 +2,7 @@
 
 Cloud Post is a production-ready sample web application designed to demonstrate how to build a simple microservices architecture on AWS. It includes infrastructure as code for the main application, an observability stack, and a CI/CD pipeline. It allows users to create and manage posts, with a simple frontend and backend architecture.
 
-![alt text](./static/image.png)
+![CloudPost main page](./static/image.png)
 
 ## Summary
 
@@ -68,44 +68,7 @@ This microservice architecture is designed for a simple web application. It may 
 
 ### Main application
 
-```mermaid
-architecture-beta
-
-service user(fa:user)[User]
-
-group aws(aws:aws-cloud-logo)[AWS Cloud]
-
-service dns(server)[DNS] in aws
-service route53(aws:arch-amazon-route-53)[AWS Route53] in aws
-group fr(cloud)["eu-west-3"] in aws
-
-group vpc(aws:arch-amazon-virtual-private-cloud)["VPC"] in fr
-
-service alb(aws:res-elastic-load-balancing-application-load-balancer)["Application Load Balancer (ALB)"] in vpc
-service ecsfront(aws:arch-amazon-elastic-container-service)["ECS Fargate frontend"] in vpc
-service ecsback(aws:arch-amazon-elastic-container-service)["ECS Fargate backend"] in vpc
-service rds(aws:arch-amazon-rds)[RDS PostgreSQL] in vpc
-
-service ecr(aws:arch-amazon-elastic-container-registry)["ECR"] in aws
-service secretsmanager(aws:arch-aws-secrets-manager)[AWS Secrets Manager] in aws
-
-user:R -[Request]-> L:dns
-route53:B --> T:dns
-dns:R --> L:alb
-
-alb:T --> B:ecsfront
-
-alb:B --> T:ecsback
-
-ecsfront:R <-[Pull latest image]- T:ecr
-ecsback:R <-[Pull latest image]- L:ecr
-
-ecsback:B --> T:rds
-
-ecsback:L <-[Manage secrets]-> T:secretsmanager
-rds:L <-[Rotate secrets]-> R:secretsmanager
-```
-
+![Main application architecture](./static/architecture_diagram.png)
 
 ### Monitoring and Observability
 
@@ -113,65 +76,13 @@ Self-hosted observability stack deployed on AWS, with Grafana for visualization,
 - A managed PostgreSQL database using Amazon RDS could be used to store the required data and AWS Secrets Manager to manage the credentials for the database.
 - Kafka could also be used to handle high volumes of logs and metrics, but for simplicity, I would use Prometheus and Loki directly to scrape and collect data from the application.
 
-```mermaid
-architecture-beta
-
-service user(fa:user)[User]
-
-group aws(aws:aws-cloud-logo)[AWS Cloud]
-
-group fr(cloud)["eu-west-3"] in aws
-
-group vpc(aws:arch-amazon-virtual-private-cloud)["VPC"] in fr
-
-group privatecloud(cloud)["Private network"] in vpc
-service vpn(aws:arch-aws-client-vpn)["AWS VPN"] in aws
-service grafana(aws:arch-amazon-ec2)["Grafana (EC2)"] in privatecloud
-
-group observability(cloud)["Observability network"] in vpc
-service prometheus(aws:spot-fleet)["Prometheus (Spot instance)"] in observability
-service loki(aws:spot-fleet)["Loki (Spot instance)"] in observability
-
-
-service logs(server)[Logs] in aws
-service metrics(server)[Metrics] in aws
-
-user:R --> L:vpn
-vpn:R --> L:grafana
-
-grafana:T <-- L:prometheus
-grafana:R <-- L:loki
-
-prometheus:R <-- L:metrics
-loki:R <-- L:logs
-```
+![Monitoring and Observability](./static/monitoring_observability.png)
 
 ### CI / CD
 
 This is a simple CI/CD pipeline using GitHub Actions to build and push Docker images to AWS ECR, which are then used by ECS Fargate to pull the latest images and deploy the application. The pipeline is triggered on every push to the main branch, and includes stages for building, testing, and deploying the application.
 
-```mermaid
-architecture-beta
-
-service developer(fa:user)[Developer]
-
-group github(logos:github-icon)[GitHub]
-
-service actions(logos:github-actions)[GitHub Actions] in github
-
-service code(fa:file-code)[Code Repository] in github
-
-group aws(aws:aws-cloud-logo)[AWS Cloud]
-
-service ecr(aws:arch-amazon-elastic-container-registry)[AWS ECR] in aws
-
-service ecs(aws:arch-amazon-elastic-container-service)[AWS ECS] in aws
-
-developer:R -[Push code]-> L:code
-code:R -[Trigger build]-> L:actions
-actions:R -[Send image]-> L:ecr
-ecr:R -[Image pull]-> L:ecs
-```
+![CI / CD](./static/ci_cd.png)
 
 ## Possible improvements
 
