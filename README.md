@@ -7,12 +7,46 @@ Cloud Post is a production-ready sample web application designed to demonstrate 
 ## Summary
 
 - [Technologies used](#technologies-used)
+- [Engineering choices](#engineering-choices)
+- [TODO](#todo)
 - [Architecture](#architecture)
 - [Main application](#main-application)
 - [Monitoring and Observability](#monitoring-and-observability)
-- [CI/CD](#ci/cd)
+- [CI/CD](#ci--cd)
 - [Possible improvements](#possible-improvements)
-- [Setup](#setup)
+- [Deployment](#deployment)
+
+## Technologies used
+
+- **frontend**: [Next.js](https://github.com/vercel/next.js/)
+- **backend**: [Nest.js](https://github.com/nestjs/nest)
+- **database**: [PostgreSQL](https://github.com/postgres/postgres)
+- **infrastructure**: [Terraform](https://github.com/hashicorp/terraform)
+- **observability**: [Grafana](https://github.com/grafana/grafana), [Prometheus](https://github.com/prometheus/prometheus), [Loki](https://github.com/grafana/loki)
+- **CI/CD**: [GitHub Actions](https://github.com/features/actions) and [AWS ECR](https://aws.amazon.com/fr/ecr/)
+
+## Engineering choices
+
+This project is intentionally built with a few practical patterns that make it easier to maintain, debug, and scale.
+
+### Backend
+
+- **NestJS** for a structured architecture with dependency injection, built-in route decorators, and pipe-based validation.
+- **DTOs + Zod** for body, query, and param validation, with Zod pipes to validate and format incoming data at the edge.
+- **Prisma** as the ORM, with its built-in migration system to keep schema changes predictable and versioned.
+- **/health** route for simple liveness checks and infrastructure monitoring.
+- **Logger middleware** to make request debugging and tracing easier during development.
+- **Swagger** decorators to generate interactive API documentation at **/swagger**, with **/swagger/yaml** and **/swagger/json** available in development mode.
+- **robots.txt** route to discourage indexing and reduce unwanted bot traffic.
+- **Environment validation** with **ConfigModule**, **class-validator**, and **class-transformer** to keep runtime configuration type-safe.
+
+### Frontend
+
+- **Next.js** for a scalable React framework that supports SSR, CSR, and fast iteration on the same codebase.
+- **SSR with initial API fetches and caching** to improve first-load performance and reduce repeated requests.
+- **Shared components** across the application to keep the UI consistent and avoid duplication.
+- **Tailwind CSS** and **Turbopack** to speed up UI development and local feedback loops.
+- **Axios** for centralized API communication logic and consistent request handling.
 
 ## TODO
 
@@ -27,15 +61,6 @@ Cloud Post is a production-ready sample web application designed to demonstrate 
 - [ ] Terraform code for AWS infrastructure setup
 - [ ] CI/CD pipeline with GitHub Actions and AWS ECR
 - [ ] Observability stack with Grafana, Prometheus and Loki
-
-## Technologies used
-
-- **frontend**: [Next.js](https://github.com/vercel/next.js/)
-- **backend**: [Nest.js](https://github.com/nestjs/nest)
-- **database**: [PostgreSQL](https://github.com/postgres/postgres)
-- **infrastructure**: [Terraform](https://github.com/hashicorp/terraform)
-- **observability**: [Grafana](https://github.com/grafana/grafana), [Prometheus](https://github.com/prometheus/prometheus), [Loki](https://github.com/grafana/loki)
-- **CI/CD**: [GitHub Actions](https://github.com/features/actions) and [AWS ECR](https://aws.amazon.com/fr/ecr/)
 
 ## AWS Architecture example
 
