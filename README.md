@@ -63,7 +63,7 @@ This project is intentionally built with a few practical patterns that make it e
 - [ ] CI/CD pipeline with GitHub Actions and AWS ECR
 - [ ] Observability stack with Grafana, Prometheus and Loki
 
-## AWS Architecture example
+## AWS Architecture
 
 This microservice architecture is designed for a simple web application. It may be improved by adding more sophisticated features (see [Possible improvements](#possible-improvements) section) and by refering to the AWS documentation (see [AWS Reference Architecture Diagrams](https://aws.amazon.com/fr/architecture/reference-architecture-diagrams/)).
 
