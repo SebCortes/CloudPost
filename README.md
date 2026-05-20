@@ -51,14 +51,15 @@ This project is intentionally built with a few practical patterns that make it e
 ## TODO
 
 > [!NOTE]
-> This project is still a work in progress, and some features are not yet implemented.
+> This project is still a work in progress, some features may not work as expected.
 - [x] Local development setup with Docker Compose
 - [x] Nest JS Setup
 - [x] Next JS Setup
 - [x] Backend done
 - [x] Frontend done
 - [x] Add documentation to Nest JS
-- [ ] Terraform code for AWS infrastructure setup
+- [x] Terraform code for AWS infrastructure setup
+- [ ] Validate terraform code by deploying to AWS and testing the app
 - [ ] CI/CD pipeline with GitHub Actions and AWS ECR
 - [ ] Observability stack with Grafana, Prometheus and Loki
 
@@ -103,13 +104,13 @@ As this is a simple sample application, some features have not been implemented.
 - **Proper code pipeline**: The current CI/CD pipeline is very basic and should be improved for production use, with proper testing stages, staging environment, and manual approval before production deployment
 - **Backup and Disaster Recovery**: Implement backup strategies, and a disaster recovery plan to ensure business continuity in case of failures.
 
-## Deployment
+# Deployment
 
-### Local deployment
+## Local deployment
 
 The application can be deployed locally using Docker Compose. This is useful for development and testing purposes, but not recommended for production use.
 
-#### Configure environment variables
+### Configure environment variables
 
 A `.env` needs to be created in the root of the project. First copy the `example.env` file.
 
@@ -119,15 +120,11 @@ cp example.env .env
 
 Then fill in the required values depending on your local setup.
 
-#### Start the application using Docker Compose
+### Start the application using Docker Compose
 
 ```bash
 ./local-setup.sh
 ```
-
-### AWS setup
-
-TODO
 
 ## Local development
 
@@ -148,8 +145,7 @@ docker compose up -d cloud-post-db
 
 Apply database migrations (env should contain the database url var)
 ```bash
-cd cloud-post-api
-npx env-cmd -f ../.env npx prisma migrate dev
+cd cloud-post-api && npx env-cmd -f ../.env npx prisma migrate dev && cd ..
 ```
 
 Start backend
@@ -161,3 +157,147 @@ Start frontend
 ```bash
 cd cloud-post-front && npm run dev
 ```
+
+## AWS setup
+
+### Prerequisites
+
+- AWS CLI configured (`aws configure`)
+- Terraform installed (>= 1.5)
+- Docker installed
+- An AWS account with sufficient permissions for:
+  - ECS
+  - ECR
+  - ALB
+  - RDS
+  - CloudFront
+  - IAM
+  - Secrets Manager
+  
+## 1. Terraform workflow
+
+All Terraform commands must be executed from the `terraform/` directory.
+
+### Initialize Terraform
+
+```bash
+terraform init
+````
+
+### Format and validate configuration
+
+```bash
+terraform fmt
+terraform validate
+```
+
+### Lock provider versions for all platforms
+
+```bash
+terraform providers lock -platform=darwin_arm64 -platform=linux_amd64 -platform=windows_amd64
+```
+
+### Plan infrastructure changes
+
+```bash
+terraform plan
+```
+
+### Apply infrastructure
+
+```bash
+terraform apply
+```
+
+Confirm with `yes` when prompted.
+
+### Destroy infrastructure
+
+When you're done testing, run this command to avoid unnecessary costs:
+
+```bash
+terraform destroy
+```
+
+This will destroy all AWS resources created by Terraform.
+
+## 2. Build and push Docker images to ECR
+
+ECS requires container images to exist in ECR before services can start successfully.
+
+### Authenticate Docker to ECR
+
+```bash
+aws ecr get-login-password --region eu-west-3 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.eu-west-3.amazonaws.com
+```
+
+Replace `<AWS_ACCOUNT_ID>` with your AWS account ID.
+
+### Retrieve ECR repository URLs
+
+After Terraform deployment:
+
+```bash
+terraform output frontend_ecr
+terraform output backend_ecr
+```
+
+Example output:
+
+```
+123456789.dkr.ecr.eu-west-3.amazonaws.com/cv-project-frontend
+123456789.dkr.ecr.eu-west-3.amazonaws.com/cv-project-backend
+```
+
+### Build Docker images
+
+From the project root:
+
+```bash
+docker build -t frontend ./frontend
+docker build -t backend ./backend
+```
+
+### Tag images for ECR
+
+```bash
+docker tag frontend:latest <FRONTEND_ECR_URL>:latest
+docker tag backend:latest <BACKEND_ECR_URL>:latest
+```
+
+### Push images to ECR
+
+```bash
+docker push <FRONTEND_ECR_URL>:latest
+docker push <BACKEND_ECR_URL>:latest
+```
+
+## 3. Deployment order
+
+Follow this order to avoid ECS startup issues:
+
+1. `terraform init`
+2. `terraform apply`
+3. Build Docker images
+4. Push images to ECR
+5. ECS services will automatically pull and start containers
+
+## 4. Updating the application
+
+After making changes to the code:
+
+### Rebuild and push backend
+
+```bash
+docker build -t backend ./backend
+docker tag backend:latest <BACKEND_ECR_URL>:latest
+docker push <BACKEND_ECR_URL>:latest
+```
+
+### Force ECS redeployment
+
+```bash
+aws ecs update-service --cluster <CLUSTER_NAME> --service backend-service --force-new-deployment
+```
+
+Repeat the same process for the frontend service.
