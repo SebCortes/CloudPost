@@ -7,6 +7,8 @@ group aws(aws:aws-cloud-logo)[AWS Cloud]
 
 service dns(server)[DNS] in aws
 service route53(aws:arch-amazon-route-53)[AWS Route53] in aws
+service cloudfront(aws:arch-amazon-cloudfront)[CloudFront] in aws
+
 group fr(cloud)["eu-west-3"] in aws
 
 group vpc(aws:arch-amazon-virtual-private-cloud)["VPC"] in fr
@@ -21,7 +23,8 @@ service secretsmanager(aws:arch-aws-secrets-manager)[AWS Secrets Manager] in aws
 
 user:R -[Request]-> L:dns
 route53:B --> T:dns
-dns:R --> L:alb
+dns:R --> L:cloudfront
+cloudfront:R --> L:alb
 
 alb:T --> B:ecsfront
 
