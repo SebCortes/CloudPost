@@ -162,7 +162,7 @@ cd cloud-post-front && npm run dev
 
 ### Prerequisites
 
-- AWS CLI configured (`aws configure`)
+- AWS CLI configured (`aws configure` and `aws login` to authenticate)
 - Terraform installed (>= 1.5)
 - Docker installed
 - An AWS account with sufficient permissions for:
