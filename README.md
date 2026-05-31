@@ -31,12 +31,12 @@ This project is intentionally built with a few practical patterns that make it e
 
 ### Backend
 
-- **NestJS** for a structured architecture with dependency injection, built-in route decorators, and pipe-based validation.
+- **NestJS** for build-in software development best practises like dependency injection, structured architecture, built-in route decorators and pipe-based validation.
 - **DTOs + Zod** for body, query, and param validation, with Zod pipes to validate and format incoming data at the edge.
-- **Prisma** as the ORM, with its built-in migration system to keep schema changes predictable and versioned.
+- **Prisma** as the ORM for its simple integration with Nest JS and its built-in migration system to keep schema changes safe and versioned.
 - **/health** route for simple liveness checks and infrastructure monitoring.
-- **Logger middleware** to make request debugging and tracing easier during development.
-- **Swagger** decorators to generate interactive API documentation at **/swagger**, with **/swagger/yaml** and **/swagger/json** available in development mode.
+- **Logger middleware** to centralize logging during both development and production, making request debugging and tracing easier.
+- **Swagger** decorators to generate interactive API documentation at **/swagger**, with **/swagger/yaml** and **/swagger/json** (available in development mode only).
 - **robots.txt** route to discourage indexing and reduce unwanted bot traffic.
 - **Environment validation** with **ConfigModule**, **class-validator**, and **class-transformer** to keep runtime configuration type-safe.
 
@@ -51,7 +51,7 @@ This project is intentionally built with a few practical patterns that make it e
 ## TODO
 
 > [!NOTE]
-> This project is still a work in progress, some features may not work as expected.
+> This project is about 80% complete, with the main application and infrastructure setup done. A few extra features will be added to make it fully production-ready.
 - [x] Local development setup with Docker Compose
 - [x] Nest JS Setup
 - [x] Next JS Setup
@@ -245,8 +245,8 @@ terraform output backend_ecr
 Example output:
 
 ```
-123456789.dkr.ecr.eu-west-3.amazonaws.com/cv-project-frontend
-123456789.dkr.ecr.eu-west-3.amazonaws.com/cv-project-backend
+1234.dkr.ecr.eu-west-3.amazonaws.com/project-frontend
+1234.dkr.ecr.eu-west-3.amazonaws.com/project-backend
 ```
 
 ### Build Docker images
