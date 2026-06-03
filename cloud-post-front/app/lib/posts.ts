@@ -92,8 +92,16 @@ type ApiPostListItem = {
 
 type ApiPost = Omit<ApiPostListItem, "_count">
 
+function resolveApiBaseURL() {
+  if (typeof window === "undefined") {
+    return (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001").replace(/\/$/, "")
+  }
+
+  return "/api"
+}
+
 const api = axios.create({
-  baseURL: (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001").replace(/\/$/, ""),
+  baseURL: resolveApiBaseURL(),
 })
 
 const accentByCategory: Record<PostCategory, PostAccent> = {

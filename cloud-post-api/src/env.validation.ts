@@ -41,6 +41,15 @@ class EnvironmentVariables {
   @IsUrl(IsUrlOptions(isProd))
   FRONT_END_DOMAIN_NAME!: string
 
+  @IsString()
+  @IsNotEmpty()
+  DATABASE_URL!: string
+
+  @ValidateIf((o) => ValidateIfNotInDevelopment(o, 'RDS_CA_CERT'))
+  @IsString()
+  @IsNotEmpty()
+  RDS_CA_CERT?: string
+
 }
 
 export interface EnvVariables extends EnvironmentVariables {}

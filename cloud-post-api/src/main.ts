@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { NestExpressApplication } from '@nestjs/platform-express'
+import { RequestMethod } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { EnvVariables } from './env.validation'
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger'
@@ -17,8 +18,15 @@ async function bootstrap() {
   const configService = app.get(ConfigService) as ConfigService<EnvVariables, true>
   
   const port = configService.get<EnvVariables['API_PORT']>('API_PORT')
+  const nodeEnv = configService.get<EnvVariables['NODE_ENV']>('NODE_ENV')
 
-  if (configService.get<EnvVariables['NODE_ENV']>('NODE_ENV') === NODE_ENV_VALUES.development) {
+  if (nodeEnv === NODE_ENV_VALUES.production) {
+    app.setGlobalPrefix('api', {
+      exclude: [{ path: 'health', method: RequestMethod.GET }],
+    })
+  }
+
+  if (nodeEnv === NODE_ENV_VALUES.development) {
     const config = new DocumentBuilder()
       .setTitle('CloudPost API')
       .setDescription('API for CloudPost, a post platform')

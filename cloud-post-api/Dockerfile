@@ -20,5 +20,6 @@ RUN npm run build
 # Expose the application port
 EXPOSE 3000
 
-# Command to run the application
-CMD ["node", "dist/main"]
+# Run Prisma migrations in production before starting the API.
+# Local development keeps using the existing compose/local setup.
+CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npx prisma migrate deploy; fi && node dist/main"]

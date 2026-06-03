@@ -39,6 +39,7 @@ This project is intentionally built with a few practical patterns that make it e
 - **Swagger** decorators to generate interactive API documentation at **/swagger**, with **/swagger/yaml** and **/swagger/json** (available in development mode only).
 - **robots.txt** route to discourage indexing and reduce unwanted bot traffic.
 - **Environment validation** with **ConfigModule**, **class-validator**, and **class-transformer** to keep runtime configuration type-safe.
+- **AWS RDS certificate via terraform** to ensure secure database connections in production, with conditional validation to allow local development without the certificate.
 
 ### Frontend
 
@@ -51,16 +52,12 @@ This project is intentionally built with a few practical patterns that make it e
 ## TODO
 
 > [!NOTE]
-> This project is about 80% complete, with the main application and infrastructure setup done. A few extra features will be added to make it fully production-ready.
-- [x] Local development setup with Docker Compose
-- [x] Nest JS Setup
-- [x] Next JS Setup
+> This project is about 90% complete, with only the grafana observability stack left to implement. Everything else is production-ready and can be deployed to AWS as is.
 - [x] Backend done
 - [x] Frontend done
 - [x] Add documentation to Nest JS
 - [x] Terraform code for AWS infrastructure setup
-- [ ] Validate terraform code by deploying to AWS and testing the app
-- [ ] CI/CD pipeline with GitHub Actions and AWS ECR
+- [x] Validate terraform code by deploying to AWS and testing the app
 - [ ] Observability stack with Grafana, Prometheus and Loki
 
 ## AWS Architecture
@@ -81,7 +78,7 @@ Self-hosted observability stack deployed on AWS, with Grafana for visualization,
 
 ### CI / CD
 
-This is a simple CI/CD pipeline using GitHub Actions to build and push Docker images to AWS ECR, which are then used by ECS Fargate to pull the latest images and deploy the application. The pipeline is triggered on every push to the main branch, and includes stages for building, testing, and deploying the application.
+This is a simple CI/CD pipeline example schema using GitHub Actions to build and push Docker images to AWS ECR, which are then used by ECS Fargate to pull the latest images and deploy the application. The pipeline is triggered on every push to the main branch, and includes stages for building, testing, and deploying the application.
 
 ![CI / CD](./static/ci_cd.png)
 
@@ -225,6 +222,27 @@ This will destroy all AWS resources created by Terraform.
 
 ECS requires container images to exist in ECR before services can start successfully.
 
+This project currently runs the ECS tasks on ARM64 Fargate. That matches the image architecture you get when building on Apple Silicon by default.
+
+### Where ECS environment variables come from
+
+- The Docker image only packages the application code and dependencies.
+- Terraform injects runtime environment values into the ECS task definition.
+- Secrets Manager stores sensitive values, and ECS pulls them into the container at start time.
+- For local development, `docker-compose.yml` injects values directly from your `.env` file instead.
+
+For this project:
+
+- Backend `DATABASE_URL` comes from a Secrets Manager secret created by Terraform.
+- Backend `API_PORT` and `NODE_ENV` are set directly in the ECS task definition.
+- Backend `FRONT_END_DOMAIN_NAME` is set from the CloudFront URL created by Terraform.
+- Frontend `NEXT_PUBLIC_API_BASE_URL` is set from the CloudFront URL plus `/api`.
+- Locally, the same app reads those values from `.env` through Docker Compose.
+- In production, the backend container runs `npx prisma migrate deploy` automatically before starting NestJS because `NODE_ENV=production` is injected by Terraform.
+
+In production, the public entrypoint is the CloudFront URL shown by `terraform output cloudfront_url`.
+The frontend lives at that URL, and the backend is reached through the same host under `/api`.
+
 ### Authenticate Docker to ECR
 
 ```bash
@@ -251,11 +269,17 @@ Example output:
 
 ### Build Docker images
 
-From the project root:
+From the repository root. If you are still inside `terraform/` after running the Terraform commands, go back first:
 
 ```bash
-docker build -t frontend ./frontend
-docker build -t backend ./backend
+cd ..
+```
+
+Then build the images:
+
+```bash
+docker build -t frontend ./cloud-post-front
+docker build -t backend ./cloud-post-api
 ```
 
 ### Tag images for ECR
@@ -289,15 +313,59 @@ After making changes to the code:
 ### Rebuild and push backend
 
 ```bash
-docker build -t backend ./backend
+docker build -t backend ./cloud-post-api
 docker tag backend:latest <BACKEND_ECR_URL>:latest
 docker push <BACKEND_ECR_URL>:latest
+```
+
+### Rebuild and push frontend
+
+```bash
+docker build -t frontend ./cloud-post-front
+docker tag frontend:latest <FRONTEND_ECR_URL>:latest
+docker push <FRONTEND_ECR_URL>:latest
 ```
 
 ### Force ECS redeployment
 
 ```bash
-aws ecs update-service --cluster <CLUSTER_NAME> --service backend-service --force-new-deployment
+aws ecs update-service --region eu-west-3 --cluster <CLUSTER_NAME> --service backend-service --force-new-deployment
 ```
 
-Repeat the same process for the frontend service.
+Repeat the same process for the frontend service:
+
+```bash
+aws ecs update-service --region eu-west-3 --cluster <CLUSTER_NAME> --service frontend-service --force-new-deployment
+```
+
+## 5. One-command production deploy
+
+The root-level [`prod-deploy.sh`](prod-deploy.sh) script wraps Terraform, Docker, ECR, and ECS into a single deploy entrypoint.
+
+Run it from the repository root:
+
+```bash
+./prod-deploy.sh <command>
+```
+
+Available commands:
+
+- `./prod-deploy.sh` or `./prod-deploy.sh help`: show the script help
+- `./prod-deploy.sh apply`: apply Terraform, build both Docker images, and push them to ECR
+- `./prod-deploy.sh apply --redeploy`: do the same as `apply`, then force a new ECS deployment for both services
+- `./prod-deploy.sh redeploy back`: rebuild, push, and redeploy only the backend service
+- `./prod-deploy.sh redeploy front`: rebuild, push, and redeploy only the frontend service
+- `./prod-deploy.sh destroy`: destroy the Terraform-managed AWS infrastructure
+
+Optional overrides:
+
+- `AWS_REGION` defaults to `eu-west-3`
+- `CLUSTER_NAME` defaults to `cloud-post-cluster`
+- `FRONTEND_SERVICE_NAME` defaults to `frontend-service`
+- `BACKEND_SERVICE_NAME` defaults to `backend-service`
+
+Example:
+
+```bash
+AWS_REGION=eu-west-3 ./prod-deploy.sh apply --redeploy
+```

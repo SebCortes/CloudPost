@@ -19,9 +19,35 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_task_execution_role_secrets" {
+  name = "${var.project_name}-ecs-task-execution-secrets"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.database_url.arn,
+          aws_secretsmanager_secret.rds_ca_cert.arn
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_cloudwatch_log_group" "ecs" {
+  name              = "/ecs/${var.project_name}"
+  retention_in_days = 7
 }
 
 resource "aws_ecs_task_definition" "backend" {
@@ -31,11 +57,24 @@ resource "aws_ecs_task_definition" "backend" {
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  runtime_platform {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
 
   container_definitions = jsonencode([
     {
       name  = "backend"
       image = "${aws_ecr_repository.backend.repository_url}:latest"
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "backend"
+        }
+      }
 
       portMappings = [{
         containerPort = 8080
@@ -45,6 +84,29 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "DB_HOST"
           value = aws_db_instance.postgres.address
+        },
+        {
+          name  = "API_PORT"
+          value = "8080"
+        },
+        {
+          name  = "NODE_ENV"
+          value = "production"
+        },
+        {
+          name  = "FRONT_END_DOMAIN_NAME"
+          value = "https://${aws_cloudfront_distribution.main.domain_name}"
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = aws_secretsmanager_secret.database_url.arn
+        },
+        {
+          name      = "RDS_CA_CERT"
+          valueFrom = aws_secretsmanager_secret.rds_ca_cert.arn
         }
       ]
     }
@@ -58,6 +120,10 @@ resource "aws_ecs_task_definition" "frontend" {
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  runtime_platform {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
 
   container_definitions = jsonencode([
     {
@@ -65,6 +131,22 @@ resource "aws_ecs_task_definition" "frontend" {
       image = "${aws_ecr_repository.frontend.repository_url}:latest"
 
       essential = true
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "frontend"
+        }
+      }
+
+      environment = [
+        {
+          name  = "NEXT_PUBLIC_API_BASE_URL"
+          value = "https://${aws_cloudfront_distribution.main.domain_name}/api"
+        }
+      ]
 
       portMappings = [
         {
