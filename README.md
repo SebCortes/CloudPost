@@ -1,6 +1,6 @@
 # Cloud Post
 
-Cloud Post is a production-ready sample web application designed to demonstrate how to build a simple microservices architecture on AWS. It includes infrastructure as code for the main application, an observability stack, and a CI/CD pipeline. It allows users to create and manage posts, with a simple frontend and backend architecture.
+Cloud Post is a production-ready sample web application designed to demonstrate how to build a secure full stack application on AWS. It includes infrastructure as code with Terraform, a NestJS backend, a Next.js frontend, and a self-hosted observability stack with Grafana, Prometheus, and Loki. It allows users to create and manage posts.
 
 ![CloudPost main page](./static/image.png)
 
@@ -8,7 +8,7 @@ Cloud Post is a production-ready sample web application designed to demonstrate 
 
 - [Technologies used](#technologies-used)
 - [Engineering choices](#engineering-choices)
-- [TODO](#todo)
+- [Todo](#todo)
 - [Architecture](#architecture)
 - [Main application](#main-application)
 - [Monitoring and Observability](#monitoring-and-observability)
@@ -49,6 +49,17 @@ This project is intentionally built with a few practical patterns that make it e
 - **Tailwind CSS** and **Turbopack** to speed up UI development and local feedback loops.
 - **Axios** for centralized API communication logic and consistent request handling.
 
+### AWS infrastructure
+
+- **ECS Fargate** for a serverless container orchestration service that abstracts away server management and allows for easy scaling.
+- **ECR** for a fully managed container registry to store and manage Docker images.
+- **ALB** for a highly available load balancer that can route traffic to multiple services and handle SSL termination.
+- **RDS** for a managed relational database service that provides scalability, availability, and security for the PostgreSQL database.
+- **CloudFront** for a global content delivery network to serve the frontend with low latency and high transfer speeds.
+- **Terraform** for infrastructure as code to automate the provisioning and management of AWS resources in a consistent and repeatable way.
+- **Secrets Manager** for secure storage and management of sensitive information like database credentials, with seamless integration into ECS task definitions.
+
+
 ## TODO
 
 > [!NOTE]
@@ -78,7 +89,7 @@ Self-hosted observability stack deployed on AWS, with Grafana for visualization,
 
 ### CI / CD
 
-This is a simple CI/CD pipeline example schema using GitHub Actions to build and push Docker images to AWS ECR, which are then used by ECS Fargate to pull the latest images and deploy the application. The pipeline is triggered on every push to the main branch, and includes stages for building, testing, and deploying the application.
+This is a simple CI/CD pipeline schema using GitHub Actions to build and push Docker images to AWS ECR, which are then used by ECS Fargate to pull the latest images and deploy the application. The pipeline should be triggered on every push to the main branch, and includes stages for building, testing, and deploying the application.
 
 ![CI / CD](./static/ci_cd.png)
 
